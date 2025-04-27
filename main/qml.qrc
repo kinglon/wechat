@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>content/qml/ButtonBase.qml</file>
+        <file>content/qml/MainWindow.qml</file>
+        <file>content/qml/MessageBox.qml</file>
+        <file>content/qml/WindowBase.qml</file>
+        <file>content/res/logo.ico</file>
+        <file>content/res/icon_close.png</file>
+        <file>content/res/icon_max.png</file>
+        <file>content/res/icon_min.png</file>
+        <file>content/res/icon_restore.png</file>
+    </qresource>
+</RCC>
