@@ -29,7 +29,7 @@ void WeChatThread::run()
         if (wechatMainWnd)
         {
             WeChat* wechat = new WeChat();
-            wechat->m_id = QUuid::createUuid().toString();
+            wechat->m_id = QUuid::createUuid().toString().remove('{').remove('}');
             wechat->m_mainWnd = wechatMainWnd;
 
             WeChatUtil wechatUtil(wechatMainWnd);
@@ -42,13 +42,13 @@ void WeChatThread::run()
                 continue;
             }
 
+            qInfo("found a new wechat main window: %s", wechat->m_nickName.toStdString().c_str());
+
             ::SetParent(wechatMainWnd, m_mainWnd);
             emit hasNewWeChat(wechat);
 
             // 去除单实例标识
-            PatchWeChat();
-
-            qInfo("found a new wechat main window: %s", wechat->m_nickName.toStdString().c_str());
+            PatchWeChat();            
         }
     }
 }
@@ -71,13 +71,20 @@ void WeChatController::run()
     QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &WeChatController::onMainTimer);
     timer->start(200);
+
+    // 开启线程抓取微信窗口
+    m_wechatThread = new WeChatThread();
+    m_wechatThread->enableMerge(m_merge);
+    m_wechatThread->setMainWindowHandle(m_mainWnd);
+    connect(m_wechatThread, &WeChatThread::hasNewWeChat, this, &WeChatController::onHasNewWeChat);
+    m_wechatThread->start();
 }
 
 void WeChatController::onMainTimer()
 {
     for (const auto& item : m_wechats)
     {
-        if (m_wechatRect.isEmpty())
+        if (m_wechatClientRect.isEmpty())
         {
             continue;
         }
@@ -94,24 +101,26 @@ void WeChatController::onMainTimer()
         {
             // 当前窗口不在屏幕内，移到屏幕内
             ::MoveWindow(item.m_mainWnd,
-                         m_wechatRect.x(), m_wechatRect.y(),
-                         m_wechatRect.width(), m_wechatRect.height(), TRUE);
+                         m_wechatClientRect.x(), m_wechatClientRect.y(),
+                         m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
         }
         else if (item.m_id != m_currentWeChatId && isInScreen)
         {
             // 非当前窗口在屏幕内，移出屏幕
             ::MoveWindow(item.m_mainWnd,
-                         OFFSCREEN_X, m_wechatRect.y(),
-                         m_wechatRect.width(), m_wechatRect.height(), FALSE);
+                         OFFSCREEN_X, m_wechatClientRect.y(),
+                         m_wechatClientRect.width(), m_wechatClientRect.height(), FALSE);
         }
         else if (item.m_id == m_currentWeChatId && isInScreen)
         {
             // 当前窗口在屏幕内，如果没有在正确的位置，调整下大小和位置
-            if (rect.left != m_wechatRect.x() || rect.top != m_wechatRect.y())
+            if (rect.left != m_wechatScreenRect.x() || rect.top != m_wechatScreenRect.y()
+                    || rect.right-rect.left != m_wechatScreenRect.width()
+                    || rect.bottom-rect.top != m_wechatScreenRect.height())
             {
                 ::MoveWindow(item.m_mainWnd,
-                             m_wechatRect.x(), m_wechatRect.y(),
-                             m_wechatRect.width(), m_wechatRect.height(), TRUE);
+                             m_wechatClientRect.x(), m_wechatClientRect.y(),
+                             m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
             }
         }
     }
@@ -136,7 +145,27 @@ void WeChatController::onHasNewWeChat(WeChat* wechat)
         emit wechatListChange();
     }
 
+    if (m_currentWeChatId.isEmpty())
+    {
+        m_currentWeChatId = m_wechats[0].m_id;
+    }
+
     delete wechat;
+}
+
+void WeChatController::setWechatRect(QRect wechatRect)
+{
+    m_wechatScreenRect = wechatRect;
+
+    // 转为客户坐标
+    POINT pt;
+    pt.x = wechatRect.left();
+    pt.y = wechatRect.top();
+    ::ScreenToClient(m_mainWnd, &pt);
+    m_wechatClientRect.setX(pt.x);
+    m_wechatClientRect.setY(pt.y);
+    m_wechatClientRect.setWidth(wechatRect.width());
+    m_wechatClientRect.setHeight(wechatRect.height());
 }
 
 QImage WeChatController::getAvatarImg(QString id)
@@ -158,22 +187,6 @@ QImage WeChatController::getAvatarImg(QString id)
     }
 
     return defaultImg;
-}
-
-void WeChatController::setMainWindowHandle(HWND mainWindow)
-{
-    if (mainWindow == NULL || m_mainWnd != NULL)
-    {
-        return;
-    }
-
-    m_mainWnd = mainWindow;
-
-    // 开启线程抓取微信窗口
-    m_wechatThread = new WeChatThread();
-    m_wechatThread->setMainWindowHandle(m_mainWnd);
-    connect(m_wechatThread, &WeChatThread::hasNewWeChat, this, &WeChatController::onHasNewWeChat);
-    m_wechatThread->start();
 }
 
 void WeChatController::mergeWeChat(bool merge)

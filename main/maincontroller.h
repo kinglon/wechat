@@ -15,8 +15,6 @@ public:
     explicit MainController(QObject *parent = nullptr);
 
 public:
-    void run();
-
     void setQmlEngine(QQmlApplicationEngine* qmlEngine) { m_qmlEngine = qmlEngine; }
 
     QImage getAvatarImg(QString id) { return m_wechatController.getAvatarImg(id); }
@@ -46,6 +44,9 @@ signals:
 
 private slots:
     void onWeChatListChange();
+
+private:
+    void run();
 
 private:
     QQmlApplicationEngine* m_qmlEngine = nullptr;

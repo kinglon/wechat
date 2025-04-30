@@ -74,7 +74,7 @@ WindowBase {
                     font.pixelSize: 13
                     icon.source: avatarImg
                     icon.width: 44
-                    icon.height: icon.width
+                    icon.height: 44
                     display: AbstractButton.TextUnderIcon
                     spacing: 4
                     bgNormalColor: "transparent"
@@ -140,7 +140,7 @@ WindowBase {
         // 横线
         Rectangle {
            id: horizonLine
-           width: parent.width - leftPannel.width
+           width: parent.width - leftPannel.width - verticalLine.width
            height: 1
            anchors.top: parent.top
            anchors.right: parent.right
@@ -151,7 +151,7 @@ WindowBase {
         Item {
             id: wechatPannel
             width: parent.width-leftPannel.width-verticalLine.width
-            height: parent.height-1
+            height: parent.height-horizonLine.height
             anchors.left: verticalLine.right
             anchors.top: horizonLine.bottom
 

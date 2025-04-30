@@ -9,9 +9,21 @@ IUIAutomation* WeChatUtil::m_uiAutomation = nullptr;
 
 bool WeChatUtil::initializeUIA()
 {
+    if (m_uiAutomation)
+    {
+        return true;
+    }
+
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr))
+    {
+        qCritical("failed to call CoInitializeEx, error: 0x%x", hr);
+        return false;
+    }
+
     IUIAutomation* pUIA = nullptr;
     CoInitialize(NULL);
-    HRESULT hr = CoCreateInstance(CLSID_CUIAutomation, NULL,
+    hr = CoCreateInstance(CLSID_CUIAutomation, NULL,
                                  CLSCTX_INPROC_SERVER, IID_IUIAutomation,
                                  (void**)&pUIA);
     if (FAILED(hr))
@@ -133,7 +145,7 @@ QImage WeChatUtil::captureWindowRegion(HWND hWnd, const RECT& regionRect)
 QString WeChatUtil::getNickName()
 {
     IUIAutomationElement* navigationToolbar = getNavigationToolbar();
-    if (navigationToolbar)
+    if (navigationToolbar == nullptr)
     {
         return "";
     }
@@ -166,7 +178,7 @@ QImage WeChatUtil::getAvatar()
 {
     QImage avatarImg;
     IUIAutomationElement* navigationToolbar = getNavigationToolbar();
-    if (navigationToolbar)
+    if (navigationToolbar == nullptr)
     {
         return avatarImg;
     }

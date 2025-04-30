@@ -67,11 +67,11 @@ public:
 
     void setCurrentWeChatId(QString wechatId) { m_currentWeChatId = wechatId; }
 
-    void setWechatRect(QRect wechatRect) { m_wechatRect = wechatRect; }
+    void setWechatRect(QRect wechatRect);
 
     QImage getAvatarImg(QString id);
 
-    void setMainWindowHandle(HWND mainWindow);
+    void setMainWindowHandle(HWND mainWindow) { m_mainWnd = mainWindow; }
 
     void mergeWeChat(bool merge);
 
@@ -96,8 +96,9 @@ private:
 
     WeChatThread* m_wechatThread = nullptr;
 
-    // 微信窗口区域，屏幕坐标
-    QRect m_wechatRect;
+    // 微信窗口区域
+    QRect m_wechatScreenRect;
+    QRect m_wechatClientRect;
 
     // 主窗口句柄
     HWND m_mainWnd = NULL;

@@ -108,6 +108,8 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine* engine = new QQmlApplicationEngine();
     engine->addImageProvider("memory", &memoryImageProvider);
     engine->rootContext()->setContextProperty("cppMainController", controller);
+    controller->setQmlEngine(engine);
+
     const QUrl url(QStringLiteral("qrc:/content/qml/MainWindow.qml"));
     QObject::connect(engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
@@ -116,7 +118,5 @@ int main(int argc, char *argv[])
     }, Qt::QueuedConnection);
     engine->load(url);
 
-    controller->setQmlEngine(engine);
-    controller->run();
     return app.exec();
 }
