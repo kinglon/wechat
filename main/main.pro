@@ -14,7 +14,12 @@ SOURCES += \
         ../Utility/httpclientbase.cpp \
         main.cpp \
         maincontroller.cpp \
-        settingmanager.cpp
+        memoryimageprovider.cpp \
+        settingmanager.cpp \
+        wechat/openwechat.cpp \
+        wechat/util.cpp \
+        wechat/wechatutil.cpp \
+        wechatcontroller.cpp
 
 RESOURCES += qml.qrc
 
@@ -43,6 +48,11 @@ HEADERS += \
     ../Utility/LogUtil.h \
     ../Utility/httpclientbase.h \
     maincontroller.h \
-    settingmanager.h
+    memoryimageprovider.h \
+    settingmanager.h \
+    wechat/openwechat.h \
+    wechat/util.h \
+    wechat/wechatutil.h \
+    wechatcontroller.h
 
 DISTFILES +=

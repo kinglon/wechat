@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <qqml.h>
+#include <wechatcontroller.h>
+#include <QQmlApplicationEngine>
 
 class MainController : public QObject
 {
@@ -15,8 +17,22 @@ public:
 public:
     void run();
 
+    void setQmlEngine(QQmlApplicationEngine* qmlEngine) { m_qmlEngine = qmlEngine; }
+
+    QImage getAvatarImg(QString id) { return m_wechatController.getAvatarImg(id); }
+
 public: // QML调用接口
     Q_INVOKABLE void quitApp();
+
+    Q_INVOKABLE bool addAccount();
+
+    Q_INVOKABLE void mergeWeChat(bool merge);
+
+    Q_INVOKABLE void setCurrentWeChat(QString wechatId);
+
+    Q_INVOKABLE void updateWeChatRect(int x, int y, int width, int height);
+
+    Q_INVOKABLE void mainWndReady();
 
 signals:
     // 显示窗口
@@ -24,6 +40,17 @@ signals:
 
     // 显示消息
     void showMessage(QString message);
+
+    // 微信列表改变
+    void wechatListChange(QString wechatJson);
+
+private slots:
+    void onWeChatListChange();
+
+private:
+    QQmlApplicationEngine* m_qmlEngine = nullptr;
+
+    WeChatController m_wechatController;
 };
 
 #endif // MAINCONTROLLER_H

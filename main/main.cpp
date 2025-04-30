@@ -10,6 +10,7 @@
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
 #include <QQuickWindow>
+#include "memoryimageprovider.h"
 
 CLogUtil* g_dllLog = nullptr;
 
@@ -101,8 +102,11 @@ int main(int argc, char *argv[])
     app.setFont(defaultFont);
 
     MainController* controller = new MainController();
+    MemoryImageProvider memoryImageProvider;
+    memoryImageProvider.setMainController(controller);
 
     QQmlApplicationEngine* engine = new QQmlApplicationEngine();
+    engine->addImageProvider("memory", &memoryImageProvider);
     engine->rootContext()->setContextProperty("cppMainController", controller);
     const QUrl url(QStringLiteral("qrc:/content/qml/MainWindow.qml"));
     QObject::connect(engine, &QQmlApplicationEngine::objectCreated,
@@ -112,6 +116,7 @@ int main(int argc, char *argv[])
     }, Qt::QueuedConnection);
     engine->load(url);
 
+    controller->setQmlEngine(engine);
     controller->run();
     return app.exec();
 }

@@ -133,8 +133,8 @@ Window {
                 ButtonBase {
                     id: minBtn
                     visible: windowBase.hasMinButton
-                    width: windowBase.btnImageWidth
-                    height: width
+                    width: height+4
+                    height: windowBase.btnImageWidth
                     anchors.right: windowBase.hasMaxButton? maxBtn.left : closeBtn.left
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
@@ -142,7 +142,6 @@ Window {
                     icon.width: width
                     icon.height: height
                     display: AbstractButton.IconOnly
-                    spacing: 0
 
                     onClicked: {
                         windowBase.visibility = Window.Minimized
@@ -152,8 +151,8 @@ Window {
                 // 最大化按钮
                 ButtonBase {
                     id: maxBtn
-                    width: windowBase.btnImageWidth
-                    height: width
+                    width: height+4
+                    height: windowBase.btnImageWidth
                     anchors.right: closeBtn.left
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
@@ -161,7 +160,6 @@ Window {
                     icon.width: width
                     icon.height: height
                     display: AbstractButton.IconOnly
-                    spacing: 0
 
                     onClicked: {
                         if (windowBase.visibility === Window.Maximized) {
@@ -175,8 +173,8 @@ Window {
                 // 关闭按钮
                 ButtonBase {
                     id: closeBtn
-                    width: windowBase.btnImageWidth
-                    height: width
+                    width: height+4
+                    height: windowBase.btnImageWidth
                     anchors.right: parent.right
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
@@ -184,7 +182,6 @@ Window {
                     icon.width: width
                     icon.height: width
                     display: AbstractButton.IconOnly
-                    spacing: 0
 
                     onClicked: {
                         windowBase.close()

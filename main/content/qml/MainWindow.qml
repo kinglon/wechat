@@ -5,6 +5,7 @@ import QtQuick.Window 2.15
 import QtGraphicalEffects 1.15
 
 WindowBase {
+    objectName: "MainWindow"
     id: mainWindow
     flags: Qt.Window|Qt.FramelessWindowHint|Qt.WindowMaximizeButtonHint|Qt.WindowMinimizeButtonHint
     width: 930
@@ -29,23 +30,116 @@ WindowBase {
         anchors.fill: parent
 
         // 左侧栏
-        Item {
+        Column {
             id: leftPannel
-            width: 88
+            width: 78
             height: parent.height
             anchors.left: parent.left
+            spacing: 5
+
+            ButtonBase {
+                id: addBtn
+                width: parent.width
+                height: 35
+                text: "添加账号"
+                textNormalColor: "#2E2E2E"
+                font.pixelSize: 13
+                bgNormalColor: "#E9E9E9"
+                bgClickColor: bgNormalColor
+                bgHoverColor: "#D1EDDE"
+                borderWidth: 0
+                normalBorderWidth: 0
+                borderRadius: 3
+
+                onClicked: cppMainController.addAccount()
+            }
+
+            ListView {
+                id: wechatList
+                width: parent.width
+                height: parent.height-addBtn.height-mergeBtn.height-2*leftPannel.spacing
+                spacing: 10
+                clip: true
+
+                model: ListModel {
+                    id: wechatModel
+                }
+
+                delegate: ButtonBase {
+                    width: parent.width
+                    height: 80
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: nickName
+                    textNormalColor: current?"#00FF80":"#2E2E2E"
+                    font.pixelSize: 13
+                    icon.source: avatarImg
+                    icon.width: 44
+                    icon.height: icon.width
+                    display: AbstractButton.TextUnderIcon
+                    spacing: 4
+                    bgNormalColor: "transparent"
+                    bgClickColor: bgNormalColor
+                    bgHoverColor: bgNormalColor
+
+                    onClicked: {
+                        cppMainController.setCurrentWeChat(wechatId)
+                        for (var j=1; j<wechatModel.count; j++)
+                        {
+                            if (wechatModel.get(j)["wechatId"] === wechatId)
+                            {
+                                wechatModel.setProperty(j, "current", true);
+                            }
+                            else
+                            {
+                                wechatModel.setProperty(j, "current", false);
+                            }
+                        }
+                    }
+                }
+            }
+
+            ButtonBase {
+                id: mergeBtn
+                width: parent.width
+                height: 30
+                text: isMerge?"拆分窗口":"合并窗口"
+                textNormalColor: "#2E2E2E"
+                font.pixelSize: 12
+                bgNormalColor: "#E9E9E9"
+                bgClickColor: bgNormalColor
+                bgHoverColor: "#D1EDDE"
+                borderWidth: 0
+                normalBorderWidth: 0
+                borderRadius: 3
+
+                // 标识当前微信窗口是否为合并状态
+                property bool isMerge: true
+
+                onClicked: {
+                    isMerge = !isMerge
+                    cppMainController.mergeWeChat(isMerge)
+                }
+            }
         }
 
         // 竖线
-        Rectangle {
-           width: 1
+        Item {
+           id: verticalLine
+           width: 11
            height: parent.height
            anchors.left: leftPannel.right
-           color: "#E5E5E5"
+
+           Rectangle {
+               width: 1
+               height: parent.height
+               anchors.right: parent.right
+               color: "#E5E5E5"
+           }
         }
 
         // 横线
         Rectangle {
+           id: horizonLine
            width: parent.width - leftPannel.width
            height: 1
            anchors.top: parent.top
@@ -56,8 +150,21 @@ WindowBase {
         // 微信区域
         Item {
             id: wechatPannel
-            width: parent.width-leftPannel.width-1
+            width: parent.width-leftPannel.width-verticalLine.width
             height: parent.height-1
+            anchors.left: verticalLine.right
+            anchors.top: horizonLine.bottom
+
+            function updateWeChatRect() {
+                const topLeft = mapToGlobal(0, 0)
+                cppMainController.updateWeChatRect(topLeft.x, topLeft.y, width, height)
+            }
+
+            onXChanged: updateWeChatRect()
+            onYChanged: updateWeChatRect()
+            onWidthChanged: updateWeChatRect()
+            onHeightChanged: updateWeChatRect()
+            Component.onCompleted: updateWeChatRect()
         }
     }
 
@@ -69,6 +176,17 @@ WindowBase {
         cppMainController.showMessage.connect(function(message) {
             //
         })
+
+        cppMainController.wechatListChange.connect(onWeChatListChange)
+        cppMainController.mainWndReady()
+    }
+
+    function onWeChatListChange(wechatJson) {
+        var wechats = JSON.parse(wechatJson)
+        wechatModel.clear()
+        for (var i=0; i<wechats.length; i++) {
+            wechatModel.append(wechats[i])
+        }
     }
 
     //可能是qmltype信息不全，有M16警告，这里屏蔽下
@@ -76,4 +194,7 @@ WindowBase {
     onClosing: function(closeEvent) {
         cppMainController.quitApp()
     }
+
+    onXChanged: wechatPannel.updateWeChatRect()
+    onYChanged: wechatPannel.updateWeChatRect()
 }
