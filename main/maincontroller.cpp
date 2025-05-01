@@ -19,6 +19,7 @@ MainController::MainController(QObject *parent)
 void MainController::run()
 {
     connect(&m_wechatController, &WeChatController::wechatListChange, this, &MainController::onWeChatListChange);
+    connect(&m_wechatController, &WeChatController::wechatStatusChange, this, &MainController::onWeChatStatusChange);
     m_wechatController.run();
 }
 
@@ -31,7 +32,8 @@ void MainController::quitApp()
     }
     first = false;
 
-    //
+    m_wechatController.stop();
+    CDumpUtil::Enable(false);
 }
 
 bool MainController::addAccount()
@@ -94,6 +96,7 @@ void MainController::onWeChatListChange()
         wechatObject["wechatId"] = wechat.m_id;
         wechatObject["nickName"] = wechat.m_nickName;
         wechatObject["avatarImg"] = QString("image://memory/avatar_") + wechat.m_id;
+        wechatObject["hasNewMsg"] = wechat.m_hasNewMsg;
         if (currentWeChatId == wechat.m_id)
         {
             wechatObject["current"] = true;
@@ -106,4 +109,19 @@ void MainController::onWeChatListChange()
     }
     QJsonDocument jsonDocument(wechatArray);
     emit wechatListChange(QString::fromUtf8(jsonDocument.toJson()));
+}
+
+void MainController::onWeChatStatusChange()
+{
+    const QVector<WeChat>& wechats = m_wechatController.getWeChats();
+    QJsonArray wechatArray;
+    for (const auto& wechat : wechats)
+    {
+        QJsonObject wechatObject;
+        wechatObject["wechatId"] = wechat.m_id;
+        wechatObject["hasNewMsg"] = wechat.m_hasNewMsg;
+        wechatArray.append(wechatObject);
+    }
+    QJsonDocument jsonDocument(wechatArray);
+    emit wechatStatusChange(QString::fromUtf8(jsonDocument.toJson()));
 }

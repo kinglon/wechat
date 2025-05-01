@@ -7,9 +7,19 @@
 #include <QSet>
 #include <QRect>
 #include <QImage>
+#include <uiautomation.h>
 
 class WeChat
 {
+public:
+    ~WeChat()
+    {
+        if (m_chatBtn)
+        {
+            m_chatBtn->Release();
+        }
+    }
+
 public:
     // ID
     QString m_id;
@@ -25,6 +35,9 @@ public:
 
     // 标识是否有新消息
     bool m_hasNewMsg = false;
+
+    // 聊天按钮
+    IUIAutomationElement* m_chatBtn = nullptr;
 };
 
 class WeChatThread: public QThread
@@ -61,6 +74,8 @@ public:
 
     void run();
 
+    void stop();
+
     const QVector<WeChat>& getWeChats() { return m_wechats; }
 
     QString getCurrentWeChatId() { return m_currentWeChatId; }
@@ -80,12 +95,19 @@ public:
 signals:
     void wechatListChange();
 
+    void wechatStatusChange();
+
 private slots:
     void onMainTimer();
 
     void onHasNewWeChat(WeChat* wechat);
 
 private:
+    void showWeChatWindow(HWND hWnd, bool visible);
+
+private:
+    bool m_isRunning = false;
+
     QVector<WeChat> m_wechats;
 
     // 标识当前窗口是合并还是拆离

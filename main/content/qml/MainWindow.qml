@@ -12,6 +12,7 @@ WindowBase {
     height: 650
     minimumWidth: 820
     minimumHeight: 620
+    title: "多开神器"
     color: "transparent"
     backgroundColor: "#F5F5F5"
     hasLogo: true
@@ -66,9 +67,8 @@ WindowBase {
                 }
 
                 delegate: ButtonBase {
-                    width: parent.width
+                    width: wechatList.width
                     height: 80
-                    anchors.horizontalCenter: parent.horizontalCenter
                     text: nickName
                     textNormalColor: current?"#00FF80":"#2E2E2E"
                     font.pixelSize: 13
@@ -80,6 +80,20 @@ WindowBase {
                     bgNormalColor: "transparent"
                     bgClickColor: bgNormalColor
                     bgHoverColor: bgNormalColor
+
+                    // 新消息小红点
+                    Rectangle {
+                        z: 1
+                        width: 8
+                        height: width
+                        anchors.right: parent.right
+                        anchors.rightMargin: 19
+                        anchors.top: parent.top
+                        anchors.topMargin: 8
+                        radius: width/2
+                        color: "red"
+                        visible: hasNewMsg
+                    }
 
                     onClicked: {
                         cppMainController.setCurrentWeChat(wechatId)
@@ -159,12 +173,12 @@ WindowBase {
             Item {
                 id: wechatCoverPannel
                 width: 149
-                height: 42
+                height: 28
                 anchors.right: parent.right
                 anchors.top: parent.top
 
                 // 覆盖微信的窗口
-                property val coverWindow: null
+                property var coverWindow: null
 
                 function updateCoverWindowPos() {
                     if (coverWindow == null) {
@@ -172,8 +186,8 @@ WindowBase {
                     }
 
                     const topLeft = wechatCoverPannel.mapToGlobal(0, 0)
-                    coverWindow.x = coverPannelTopLeft.x
-                    coverWindow.y = coverPannelTopLeft.y
+                    coverWindow.x = topLeft.x
+                    coverWindow.y = topLeft.y
                 }
             }
 
@@ -189,23 +203,59 @@ WindowBase {
             onHeightChanged: updateWeChatRect()
             Component.onCompleted: updateWeChatRect()
         }
+
+        // 启动页面，盖在上面
+        Rectangle {
+            id: launchPanel
+            anchors.fill: parent
+            color: mainWindow.backgroundColor
+            z: 1
+
+            Item {
+                width: parent.width
+                height: qrCodeImg.height + launchBtn.height + 50
+                anchors.centerIn: parent
+
+                // 二维码
+                Image {
+                    id: qrCodeImg
+                    width: 283
+                    height: 283
+                    anchors.top: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "image://memory/qrcode"
+                    fillMode: Image.PreserveAspectCrop
+                }
+
+                // 启动按钮
+                ButtonBase {
+                    id: launchBtn
+                    width: 240
+                    height: 65
+                    anchors.bottom: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    bgNormalColor: "#07C160"
+                    bgClickColor: bgNormalColor
+                    bgHoverColor: "#08E371"
+                    text: "立即启动"
+                    font.pixelSize: 23
+                    textNormalColor: "#FFFFFF"
+
+                    onClicked: {
+                        launchPanel.visible = false
+                        cppMainController.mainWndReady()
+                        wechatPannel.updateWeChatRect()
+                    }
+                }
+            }
+        }
     }
 
     Component.onCompleted: {
-        cppMainController.showWindow.connect(function(name) {
-            //
-        })
-
-        cppMainController.showMessage.connect(function(message) {
-            //
-        })
-
+        cppMainController.showWindow.connect(function(name) {})
+        cppMainController.showMessage.connect(function(message) {})
         cppMainController.wechatListChange.connect(onWeChatListChange)
-
-        setTimeout(function() {
-            cppMainController.mainWndReady()
-            wechatCoverPannel.updateCoverWindowPos()
-        }, 100);
+        cppMainController.wechatStatusChange.connect(onWechatStatusChange)
     }
 
     function onWeChatListChange(wechatJson) {
@@ -213,6 +263,17 @@ WindowBase {
         wechatModel.clear()
         for (var i=0; i<wechats.length; i++) {
             wechatModel.append(wechats[i])
+        }
+    }
+
+    function onWechatStatusChange(wechatJson) {
+        var wechats = JSON.parse(wechatJson)
+        for (var i = 0; i < wechatModel.count; i++) {
+            for (var j=0; j<wechats.length; j++) {
+                if (wechatModel.get(i).wechatId === wechats[j].wechatId) {
+                    wechatModel.setProperty(i, "hasNewMsg", wechats[j].hasNewMsg);
+                }
+            }
         }
     }
 

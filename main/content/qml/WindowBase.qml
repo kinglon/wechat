@@ -8,8 +8,7 @@ Window {
     id: windowBase
     visible: true
     width: 800
-    height: 600
-    title: "多开神器"
+    height: 600    
 
     // 客户区内容（不包含标题栏、边框）
     property alias contentArea: contentArea

@@ -78,10 +78,24 @@ void WeChatController::run()
     m_wechatThread->setMainWindowHandle(m_mainWnd);
     connect(m_wechatThread, &WeChatThread::hasNewWeChat, this, &WeChatController::onHasNewWeChat);
     m_wechatThread->start();
+
+    m_isRunning = true;
+}
+
+void WeChatController::stop()
+{
+    m_isRunning = false;
+    WeChatUtil::unInitializeUIA();
 }
 
 void WeChatController::onMainTimer()
 {
+    if (!m_isRunning)
+    {
+        return;
+    }
+
+    // 实时更新每个微信窗口的位置
     for (const auto& item : m_wechats)
     {
         if (m_wechatClientRect.isEmpty())
@@ -100,16 +114,12 @@ void WeChatController::onMainTimer()
         if (item.m_id == m_currentWeChatId && !isInScreen)
         {
             // 当前窗口不在屏幕内，移到屏幕内
-            ::MoveWindow(item.m_mainWnd,
-                         m_wechatClientRect.x(), m_wechatClientRect.y(),
-                         m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
+            showWeChatWindow(item.m_mainWnd, true);
         }
         else if (item.m_id != m_currentWeChatId && isInScreen)
         {
             // 非当前窗口在屏幕内，移出屏幕
-            ::MoveWindow(item.m_mainWnd,
-                         OFFSCREEN_X, m_wechatClientRect.y(),
-                         m_wechatClientRect.width(), m_wechatClientRect.height(), FALSE);
+            showWeChatWindow(item.m_mainWnd, false);
         }
         else if (item.m_id == m_currentWeChatId && isInScreen)
         {
@@ -118,11 +128,73 @@ void WeChatController::onMainTimer()
                     || rect.right-rect.left != m_wechatScreenRect.width()
                     || rect.bottom-rect.top != m_wechatScreenRect.height())
             {
-                ::MoveWindow(item.m_mainWnd,
-                             m_wechatClientRect.x(), m_wechatClientRect.y(),
-                             m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
+                showWeChatWindow(item.m_mainWnd, true);
             }
         }
+    }
+
+    // 实时更新是否有新消息的状态
+    bool change = false;
+    for (auto& item : m_wechats)
+    {
+        if (item.m_chatBtn == nullptr)
+        {
+            WeChatUtil wechatUtil(item.m_mainWnd);
+            item.m_chatBtn = wechatUtil.getChatBtn();
+        }
+
+        if (item.m_chatBtn)
+        {
+            __try
+            {
+                VARIANT varValue;
+                HRESULT hr = item.m_chatBtn->GetCurrentPropertyValue(UIA_LegacyIAccessibleValuePropertyId, &varValue);
+                if (SUCCEEDED(hr))
+                {
+                    if (varValue.vt == VT_BSTR)
+                    {
+                        bool hasNewMsg = varValue.bstrVal[0] != L'\0';
+                        if (hasNewMsg != item.m_hasNewMsg)
+                        {
+                            item.m_hasNewMsg = hasNewMsg;
+                            change = true;
+                        }
+                    }
+                    VariantClear(&varValue);
+                }
+                else
+                {
+                    item.m_chatBtn->Release();
+                    item.m_chatBtn = nullptr;
+                }
+            }
+            __except(EXCEPTION_EXECUTE_HANDLER)
+            {
+                qDebug("the chat button has been invalid");
+                item.m_chatBtn->Release();
+                item.m_chatBtn = nullptr;
+            }
+        }
+    }
+
+    if (change)
+    {
+        emit wechatStatusChange();
+    }
+}
+
+void WeChatController::showWeChatWindow(HWND hWnd, bool visible)
+{
+    if (visible)
+    {
+        ::ShowWindow(hWnd, SW_MAXIMIZE);
+        ::MoveWindow(hWnd, m_wechatClientRect.x(), m_wechatClientRect.y(),
+                     m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
+    }
+    else
+    {
+        ::MoveWindow(hWnd, OFFSCREEN_X, m_wechatClientRect.y(),
+                     m_wechatClientRect.width(), m_wechatClientRect.height(), FALSE);
     }
 }
 
@@ -142,12 +214,11 @@ void WeChatController::onHasNewWeChat(WeChat* wechat)
     if (!found)
     {
         m_wechats.append(*wechat);
+        if (m_currentWeChatId.isEmpty())
+        {
+            m_currentWeChatId = m_wechats[0].m_id;
+        }
         emit wechatListChange();
-    }
-
-    if (m_currentWeChatId.isEmpty())
-    {
-        m_currentWeChatId = m_wechats[0].m_id;
     }
 
     delete wechat;
@@ -155,6 +226,11 @@ void WeChatController::onHasNewWeChat(WeChat* wechat)
 
 void WeChatController::setWechatRect(QRect wechatRect)
 {
+    if (m_mainWnd == NULL)
+    {
+        return;
+    }
+
     m_wechatScreenRect = wechatRect;
 
     // 转为客户坐标
@@ -209,6 +285,7 @@ void WeChatController::mergeWeChat(bool merge)
 
         // 清空微信列表
         m_wechats.clear();
+        m_currentWeChatId = "";
         emit wechatListChange();
     }
 }

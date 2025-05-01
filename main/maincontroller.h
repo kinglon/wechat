@@ -43,8 +43,13 @@ signals:
     // 微信列表改变
     void wechatListChange(QString wechatJson);
 
+    // 微信状态改变
+    void wechatStatusChange(QString wechatJson);
+
 private slots:
     void onWeChatListChange();
+
+    void onWeChatStatusChange();
 
 private:
     void run();

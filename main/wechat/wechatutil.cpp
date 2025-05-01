@@ -1,4 +1,7 @@
 ﻿#include "wechatutil.h"
+#include <comdef.h>
+#include <atlbase.h>
+#include <atlcom.h>
 
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -34,6 +37,15 @@ bool WeChatUtil::initializeUIA()
 
     m_uiAutomation = pUIA;
     return true;
+}
+
+void WeChatUtil::unInitializeUIA()
+{
+    if (m_uiAutomation)
+    {
+        m_uiAutomation->Release();
+        m_uiAutomation = nullptr;
+    }
 }
 
 IUIAutomationElement* WeChatUtil::getNavigationToolbar()
@@ -201,4 +213,32 @@ QImage WeChatUtil::getAvatar()
     navigationToolbar->Release();
 
     return avatarImg;
+}
+
+IUIAutomationElement* WeChatUtil::getChatBtn()
+{
+    IUIAutomationElement* navigationToolbar = getNavigationToolbar();
+    if (navigationToolbar == nullptr)
+    {
+        return nullptr;
+    }
+
+    IUIAutomationCondition* pNameCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, CComVariant(L"聊天"), &pNameCondition);
+
+    IUIAutomationCondition* pControlTypeCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(UIA_ButtonControlTypeId), &pControlTypeCondition);
+
+    IUIAutomationCondition* pCombinedCondition = NULL;
+    m_uiAutomation->CreateAndCondition(pNameCondition, pControlTypeCondition, &pCombinedCondition);
+
+    IUIAutomationElement* button = nullptr;
+    navigationToolbar->FindFirst(TreeScope_Children, pCombinedCondition, &button);
+
+    pNameCondition->Release();
+    pControlTypeCondition->Release();
+    pCombinedCondition->Release();
+    navigationToolbar->Release();
+
+    return button;
 }

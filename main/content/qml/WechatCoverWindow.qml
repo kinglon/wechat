@@ -5,10 +5,16 @@ import QtQuick.Window 2.15
 import QtGraphicalEffects 1.15
 
 Window {
-    objectName: "WechatCoverWindow"
     id: wechatCoverWindow
-    flags: Qt.Window|Qt.FramelessWindowHint|Qt.Popup
+    flags: Qt.Window|Qt.FramelessWindowHint
+    visible: true
     width: 149
     height: 32
-    color: "#F5F5F5"
+    title: "WeChatCover"
+    color: "transparent"
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#F5F5F5"
+    }
 }

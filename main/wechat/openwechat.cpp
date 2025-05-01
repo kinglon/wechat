@@ -120,60 +120,52 @@ int PatchWeChat()
 
     if (!ZwQuerySystemInformation)
     {
-        goto Exit0;
+        return ret;
     }
 
     pbuffer = VirtualAlloc(NULL, 0x1000, MEM_COMMIT, PAGE_READWRITE);
-
     if (!pbuffer)
     {
-        goto Exit0;
+        return ret;
     }
 
     Status = ZwQuerySystemInformation(SystemHandleInformation, pbuffer, 0x1000, &dwSize);
-
     if (!NT_SUCCESS(Status))
     {
         if (STATUS_INFO_LENGTH_MISMATCH != Status)
         {
-            goto Exit0;
+            VirtualFree(pbuffer, 0, MEM_RELEASE);
+            return ret;
         }
-        else
+
+        if (dwSize * 2 > 0x4000000)  // MAXSIZE
         {
-            // 这里大家可以保证程序的正确性使用循环分配稍好
-            if (NULL != pbuffer)
-            {
-                VirtualFree(pbuffer, 0, MEM_RELEASE);
-            }
+            VirtualFree(pbuffer, 0, MEM_RELEASE);
+            return ret;
+        }
 
-            if (dwSize * 2 > 0x4000000)  // MAXSIZE
-            {
-                goto Exit0;
-            }
+        // 空间不足
+        VirtualFree(pbuffer, 0, MEM_RELEASE);
+        pbuffer = VirtualAlloc(NULL, dwSize * 2, MEM_COMMIT, PAGE_READWRITE);
+        if (!pbuffer)
+        {
+            VirtualFree(pbuffer, 0, MEM_RELEASE);
+            return ret;
+        }
 
-            pbuffer = VirtualAlloc(NULL, dwSize * 2, MEM_COMMIT, PAGE_READWRITE);
-
-            if (!pbuffer)
-            {
-                goto Exit0;
-            }
-
-            Status = ZwQuerySystemInformation(SystemHandleInformation, pbuffer, dwSize * 2, NULL);
-
-            if (!NT_SUCCESS(Status))
-            {
-                goto Exit0;
-            }
+        Status = ZwQuerySystemInformation(SystemHandleInformation, pbuffer, dwSize * 2, NULL);
+        if (!NT_SUCCESS(Status))
+        {
+            VirtualFree(pbuffer, 0, MEM_RELEASE);
+            return ret;
         }
     }
 
     pHandleInfo = (PSYSTEM_HANDLE_INFORMATION1)pbuffer;
-
     for (nIndex = 0; nIndex < pHandleInfo->NumberOfHandles; nIndex++)
     {
         if (IsTargetPid(pHandleInfo->Handles[nIndex].UniqueProcessId, Pids, Num))
         {
-            //
             HANDLE hHandle = DuplicateHandleEx(pHandleInfo->Handles[nIndex].UniqueProcessId,
                 reinterpret_cast<HANDLE>(pHandleInfo->Handles[nIndex].HandleValue),
                 DUPLICATE_SAME_ACCESS
@@ -181,7 +173,6 @@ int PatchWeChat()
             if (hHandle == NULL) continue;
 
             Status = NtQueryObject(hHandle, ObjectNameInformation, szName, 512, &dwFlags);
-
             if (!NT_SUCCESS(Status))
             {
                 CloseHandle(hHandle);
@@ -189,12 +180,13 @@ int PatchWeChat()
             }
 
             Status = NtQueryObject(hHandle, ObjectTypeInformation, szType, 128, &dwFlags);
-
             if (!NT_SUCCESS(Status))
             {
                 CloseHandle(hHandle);
                 continue;
             }
+
+            CloseHandle(hHandle);
 
             pNameInfo = (POBJECT_NAME_INFORMATION)szName;
             pNameType = (POBJECT_NAME_INFORMATION)szType;
@@ -213,8 +205,6 @@ int PatchWeChat()
                 if (wcsstr(Name, L"_WeChat_") &&
                     wcsstr(Name, L"_Instance_Identity_Mutex_Name"))
                 {
-                    CloseHandle(hHandle);
-
                     hHandle = DuplicateHandleEx(pHandleInfo->Handles[nIndex].UniqueProcessId,
                         reinterpret_cast<HANDLE>(pHandleInfo->Handles[nIndex].HandleValue),
                         DUPLICATE_CLOSE_SOURCE
@@ -229,22 +219,12 @@ int PatchWeChat()
                     {
                         ret = GetLastError();
                     }
-
-                    //goto Exit0;
                 }
             }
-
-            CloseHandle(hHandle);
         }
-
     }
 
-Exit0:
-    if (NULL != pbuffer)
-    {
-        VirtualFree(pbuffer, 0, MEM_RELEASE);
-    }
-
+    VirtualFree(pbuffer, 0, MEM_RELEASE);
     return ret;
 }
 

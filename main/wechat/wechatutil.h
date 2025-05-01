@@ -12,6 +12,7 @@ public:
 
 public:
     static bool initializeUIA();
+    static void unInitializeUIA();
 
     // 获取昵称
     QString getNickName();
@@ -19,8 +20,8 @@ public:
     // 获取头像
     QImage getAvatar();
 
-    // 检查是否有新消息
-    bool hasNewMessage(bool& has);
+    // 获取聊天按钮
+    IUIAutomationElement* getChatBtn();
 
 private:
     // 获取导航工具栏对象
