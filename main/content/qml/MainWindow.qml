@@ -155,9 +155,32 @@ WindowBase {
             anchors.left: verticalLine.right
             anchors.top: horizonLine.bottom
 
+            // 覆盖微信窗口关闭按钮的区域
+            Item {
+                id: wechatCoverPannel
+                width: 149
+                height: 42
+                anchors.right: parent.right
+                anchors.top: parent.top
+
+                // 覆盖微信的窗口
+                property val coverWindow: null
+
+                function updateCoverWindowPos() {
+                    if (coverWindow == null) {
+                        coverWindow = wechatCoverWindowComponent.createObject(mainWindow, {"width": wechatCoverPannel.width, "height": wechatCoverPannel.height})
+                    }
+
+                    const topLeft = wechatCoverPannel.mapToGlobal(0, 0)
+                    coverWindow.x = coverPannelTopLeft.x
+                    coverWindow.y = coverPannelTopLeft.y
+                }
+            }
+
             function updateWeChatRect() {
                 const topLeft = mapToGlobal(0, 0)
                 cppMainController.updateWeChatRect(topLeft.x, topLeft.y, width, height)
+                wechatCoverPannel.updateCoverWindowPos()
             }
 
             onXChanged: updateWeChatRect()
@@ -178,7 +201,11 @@ WindowBase {
         })
 
         cppMainController.wechatListChange.connect(onWeChatListChange)
-        cppMainController.mainWndReady()
+
+        setTimeout(function() {
+            cppMainController.mainWndReady()
+            wechatCoverPannel.updateCoverWindowPos()
+        }, 100);
     }
 
     function onWeChatListChange(wechatJson) {
@@ -197,4 +224,9 @@ WindowBase {
 
     onXChanged: wechatPannel.updateWeChatRect()
     onYChanged: wechatPannel.updateWeChatRect()
+
+    Component {
+        id: wechatCoverWindowComponent
+        WechatCoverWindow {}
+    }
 }

@@ -30,6 +30,7 @@ public: // QML调用接口
 
     Q_INVOKABLE void updateWeChatRect(int x, int y, int width, int height);
 
+    // 主窗口已创建
     Q_INVOKABLE void mainWndReady();
 
 signals:

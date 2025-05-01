@@ -9,5 +9,6 @@
         <file>content/res/icon_max.png</file>
         <file>content/res/icon_min.png</file>
         <file>content/res/icon_restore.png</file>
+        <file>content/qml/WechatCoverWindow.qml</file>
     </qresource>
 </RCC>

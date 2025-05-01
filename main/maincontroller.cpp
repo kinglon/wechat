@@ -62,28 +62,25 @@ void MainController::mainWndReady()
         return;
     }    
 
-    QTimer::singleShot(0, [this]()
+    QList<QObject*> rootObjects = m_qmlEngine->rootObjects();
+    QQuickWindow* targetWindow = nullptr;
+    for (QObject* obj : rootObjects)
     {
-        QList<QObject*> rootObjects = m_qmlEngine->rootObjects();
-        QQuickWindow* targetWindow = nullptr;
-        for (QObject* obj : rootObjects)
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(obj);
+        if (window && window->objectName() == "MainWindow")
         {
-            QQuickWindow* window = qobject_cast<QQuickWindow*>(obj);
-            if (window && window->objectName() == "MainWindow")
-            {
-                targetWindow = window;
-                break;
-            }
+            targetWindow = window;
+            break;
         }
-        if (targetWindow == nullptr || targetWindow->winId() == 0)
-        {
-            qCritical("failed to find the main window");
-            return;
-        }
+    }
+    if (targetWindow == nullptr || targetWindow->winId() == 0)
+    {
+        qCritical("failed to find the main window");
+        return;
+    }
 
-        m_wechatController.setMainWindowHandle((HWND)targetWindow->winId());
-        run();
-    });
+    m_wechatController.setMainWindowHandle((HWND)targetWindow->winId());
+    run();
 }
 
 void MainController::onWeChatListChange()
