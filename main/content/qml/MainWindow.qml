@@ -97,7 +97,7 @@ WindowBase {
 
                     onClicked: {
                         cppMainController.setCurrentWeChat(wechatId)
-                        for (var j=1; j<wechatModel.count; j++)
+                        for (var j=0; j<wechatModel.count; j++)
                         {
                             if (wechatModel.get(j)["wechatId"] === wechatId)
                             {
@@ -109,6 +109,8 @@ WindowBase {
                             }
                         }
                     }
+
+                    onTextNormalColorChanged: { updateButtonStatus(); }
                 }
             }
 

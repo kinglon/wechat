@@ -12,15 +12,6 @@
 class WeChat
 {
 public:
-    ~WeChat()
-    {
-        if (m_chatBtn)
-        {
-            m_chatBtn->Release();
-        }
-    }
-
-public:
     // ID
     QString m_id;
 

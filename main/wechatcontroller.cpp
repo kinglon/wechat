@@ -145,32 +145,23 @@ void WeChatController::onMainTimer()
 
         if (item.m_chatBtn)
         {
-            __try
+            VARIANT varValue;
+            HRESULT hr = item.m_chatBtn->GetCurrentPropertyValue(UIA_LegacyIAccessibleValuePropertyId, &varValue);
+            if (SUCCEEDED(hr))
             {
-                VARIANT varValue;
-                HRESULT hr = item.m_chatBtn->GetCurrentPropertyValue(UIA_LegacyIAccessibleValuePropertyId, &varValue);
-                if (SUCCEEDED(hr))
+                if (varValue.vt == VT_BSTR)
                 {
-                    if (varValue.vt == VT_BSTR)
+                    bool hasNewMsg = varValue.bstrVal[0] != L'\0';
+                    if (hasNewMsg != item.m_hasNewMsg)
                     {
-                        bool hasNewMsg = varValue.bstrVal[0] != L'\0';
-                        if (hasNewMsg != item.m_hasNewMsg)
-                        {
-                            item.m_hasNewMsg = hasNewMsg;
-                            change = true;
-                        }
+                        item.m_hasNewMsg = hasNewMsg;
+                        change = true;
                     }
-                    VariantClear(&varValue);
                 }
-                else
-                {
-                    item.m_chatBtn->Release();
-                    item.m_chatBtn = nullptr;
-                }
+                VariantClear(&varValue);
             }
-            __except(EXCEPTION_EXECUTE_HANDLER)
+            else
             {
-                qDebug("the chat button has been invalid");
                 item.m_chatBtn->Release();
                 item.m_chatBtn = nullptr;
             }
@@ -194,7 +185,7 @@ void WeChatController::showWeChatWindow(HWND hWnd, bool visible)
     else
     {
         ::MoveWindow(hWnd, OFFSCREEN_X, m_wechatClientRect.y(),
-                     m_wechatClientRect.width(), m_wechatClientRect.height(), FALSE);
+                     m_wechatClientRect.width(), m_wechatClientRect.height(), TRUE);
     }
 }
 
@@ -281,9 +272,19 @@ void WeChatController::mergeWeChat(bool merge)
         {
             ::SetParent(item.m_mainWnd, NULL);
             ::ShowWindow(item.m_mainWnd, SW_SHOW);
+            ::MoveWindow(item.m_mainWnd, m_wechatScreenRect.x(), m_wechatScreenRect.y(),
+                         m_wechatScreenRect.width(), m_wechatScreenRect.height(), TRUE);
         }
 
         // 清空微信列表
+        for (auto& item : m_wechats)
+        {
+            if (item.m_chatBtn)
+            {
+                item.m_chatBtn->Release();
+                item.m_chatBtn = nullptr;
+            }
+        }
         m_wechats.clear();
         m_currentWeChatId = "";
         emit wechatListChange();
