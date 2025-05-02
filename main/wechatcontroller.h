@@ -46,6 +46,13 @@ public:
 
     void setMainWindowHandle(HWND mainWindow) { m_mainWnd = mainWindow;}
 
+    /**
+     * @brief 判断 QImage 是否完全不透明（所有像素 Alpha=255）
+     * @param image 输入的 QImage（必须为 Format_ARGB32）
+     * @return true=不透明，false=有透明像素
+     */
+    static bool isQImageOpaque(const QImage& image);
+
 signals:
     void hasNewWeChat(WeChat* wechat);
 

@@ -108,48 +108,75 @@ QImage WeChatUtil::captureElement(IUIAutomationElement* element)
     ScreenToClient(m_hWnd, &pt);
     RECT clientRect = {pt.x, pt.y, pt.x+screenRect.right-screenRect.left, pt.y+screenRect.bottom-screenRect.top};
 
-    // 截取图片
-    return captureWindowRegion(m_hWnd, clientRect);
+    // 抓取窗口图片，必须从左上角开始抓取
+    RECT captrueRect = clientRect;
+    captrueRect.left = 0;
+    captrueRect.top = 0;
+    QImage img = captureWindowRegion(m_hWnd, captrueRect);
+    if (img.isNull())
+    {
+        return img;
+    }
+
+    // 裁剪元素区域的图片
+    return img.copy(clientRect.left, clientRect.top, clientRect.right - clientRect.left, clientRect.bottom - clientRect.top);
 }
 
-QImage WeChatUtil::captureWindowRegion(HWND hWnd, const RECT& regionRect)
+QImage WeChatUtil::captureWindowRegion(HWND hwnd, const RECT& rect)
 {
-    if (!hWnd || IsRectEmpty(&regionRect)) return QImage();
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+    if (width <= 0 || height <= 0)
+    {
+        return QImage();
+    }
 
     // 获取窗口设备上下文
-    HDC hWindowDC = GetWindowDC(hWnd);
-    HDC hMemoryDC = CreateCompatibleDC(hWindowDC);
+    HDC hdcWindow = GetWindowDC(hwnd);
+    if (!hdcWindow)
+    {
+        return QImage();
+    }
 
-    int width = regionRect.right - regionRect.left;
-    int height = regionRect.bottom - regionRect.top;
+    // 创建内存 DC 和位图
+    HDC hdcMem = CreateCompatibleDC(hdcWindow);
+    HBITMAP hBitmap = CreateCompatibleBitmap(hdcWindow, width, height);
+    SelectObject(hdcMem, hBitmap);
 
-    // 创建兼容位图
-    HBITMAP hBitmap = CreateCompatibleBitmap(hWindowDC, width, height);
-    SelectObject(hMemoryDC, hBitmap);
+    // 使用 PrintWindow 捕获窗口内容（支持 GPU 渲染窗口）
+    PrintWindow(hwnd, hdcMem, PW_CLIENTONLY);
 
-    // 拷贝窗口区域到位图
-    BitBlt(hMemoryDC, 0, 0, width, height,
-           hWindowDC, regionRect.left, regionRect.top, SRCCOPY);
+    // 转换为 32 位 ARGB 格式
+    BITMAPINFO bmi;
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = width;
+    bmi.bmiHeader.biHeight = -height; // 从上到下
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
 
-    // 转换为QImage
+    std::vector<BYTE> pixels(width * height * 4);
+    GetDIBits(hdcMem, hBitmap, 0, height, pixels.data(), &bmi, DIB_RGB_COLORS);
+
+    // 创建 QImage（ARGB32 格式）
     QImage image(width, height, QImage::Format_ARGB32);
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            int offset = (y * width + x) * 4;
+            BYTE b = pixels[offset];
+            BYTE g = pixels[offset + 1];
+            BYTE r = pixels[offset + 2];
+            BYTE a = pixels[offset + 3];
+            image.setPixel(x, y, qRgba(r, g, b, a));
+        }
+    }
 
-    BITMAPINFOHEADER bmi = {0};
-    bmi.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.biWidth = width;
-    bmi.biHeight = -height; // 负值表示从上到下的位图
-    bmi.biPlanes = 1;
-    bmi.biBitCount = 32;
-    bmi.biCompression = BI_RGB;
-
-    // 获取位图数据到QImage
-    GetDIBits(hMemoryDC, hBitmap, 0, height,
-              image.bits(), (BITMAPINFO*)&bmi, DIB_RGB_COLORS);
-
-    // 清理资源
+    // 释放资源
     DeleteObject(hBitmap);
-    DeleteDC(hMemoryDC);
-    ReleaseDC(hWnd, hWindowDC);
+    DeleteDC(hdcMem);
+    ReleaseDC(hwnd, hdcWindow);
 
     return image;
 }

@@ -28,29 +28,59 @@ void WeChatThread::run()
         HWND wechatMainWnd = FindWindow(L"WeChatMainWndForPC", NULL);
         if (wechatMainWnd)
         {
-            WeChat* wechat = new WeChat();
-            wechat->m_id = QUuid::createUuid().toString().remove('{').remove('}');
-            wechat->m_mainWnd = wechatMainWnd;
-
             WeChatUtil wechatUtil(wechatMainWnd);
-            wechat->m_nickName = wechatUtil.getNickName();
-            wechat->m_avatarImg = wechatUtil.getAvatar();
-            if (wechat->m_nickName.isEmpty())
+            QString nickName = wechatUtil.getNickName();
+            if (nickName.isEmpty())
             {
-                qDebug("failed to get the nick name");
-                delete wechat;
+                qInfo("failed to get the nick name");
                 continue;
             }
 
-            qInfo("found a new wechat main window: %s", wechat->m_nickName.toStdString().c_str());
+            QImage avatarImg = wechatUtil.getAvatar();
+            if (!isQImageOpaque(avatarImg))
+            {
+                qInfo("found a wechat window, but avatar is transparent");
+                continue;
+            }
+
+            qInfo("found a new wechat main window: %s", nickName.toStdString().c_str());
+
+            WeChat* wechat = new WeChat();
+            wechat->m_id = QUuid::createUuid().toString().remove('{').remove('}');
+            wechat->m_mainWnd = wechatMainWnd;
+            wechat->m_nickName = nickName;
+            wechat->m_avatarImg = avatarImg;
+            emit hasNewWeChat(wechat);
 
             ::SetParent(wechatMainWnd, m_mainWnd);
-            emit hasNewWeChat(wechat);
 
             // 去除单实例标识
             PatchWeChat();            
         }
     }
+}
+
+bool WeChatThread::isQImageOpaque(const QImage& image)
+{
+    if (image.isNull() || image.format() != QImage::Format_ARGB32)
+    {
+        return false;
+    }
+
+    // image.save(R"(C:\Users\zengxiangbin\Downloads\111\bbb.png)");
+
+    for (int y = 0; y < image.height(); y++)
+    {
+        for (int x = 0; x < image.width(); x++)
+        {
+            QRgb pixel = image.pixel(x, y);
+            if (qAlpha(pixel) != 255)
+            {
+                return false; // 发现透明像素
+            }
+        }
+    }
+    return true;
 }
 
 WeChatController::WeChatController(QObject *parent)
