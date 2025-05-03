@@ -7,7 +7,7 @@
 
 using namespace std;
 
-std::wstring CImPath::m_appName = L"AkoolCam";
+std::wstring CImPath::m_appName = L"DouKai";
 
 std::wstring CImPath::GetDataPath()
 {
