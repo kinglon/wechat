@@ -59,6 +59,8 @@ void MainController::updateWeChatRect(int x, int y, int width, int height)
 
 void MainController::mainWndReady()
 {
+    m_dataCollectController.sendEvent("launch");
+
     if (m_qmlEngine == nullptr)
     {
         return;

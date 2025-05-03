@@ -12,6 +12,7 @@ SOURCES += \
         ../Utility/LogBuffer.cpp \
         ../Utility/LogUtil.cpp \
         ../Utility/httpclientbase.cpp \
+        datacollectcontroller.cpp \
         main.cpp \
         maincontroller.cpp \
         memoryimageprovider.cpp \
@@ -47,6 +48,7 @@ HEADERS += \
     ../Utility/LogMacro.h \
     ../Utility/LogUtil.h \
     ../Utility/httpclientbase.h \
+    datacollectcontroller.h \
     maincontroller.h \
     memoryimageprovider.h \
     settingmanager.h \

@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include <qqml.h>
-#include <wechatcontroller.h>
+#include "wechatcontroller.h"
 #include <QQmlApplicationEngine>
+#include "datacollectcontroller.h"
 
 class MainController : public QObject
 {
@@ -58,6 +59,8 @@ private:
     QQmlApplicationEngine* m_qmlEngine = nullptr;
 
     WeChatController m_wechatController;
+
+    DataCollectController m_dataCollectController;
 };
 
 #endif // MAINCONTROLLER_H
