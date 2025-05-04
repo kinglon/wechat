@@ -76,6 +76,54 @@ def update_visit_list(client_ip):
                 logger.error(f'failed to release the the global mutex, error: {e}')
 
 
+# 统计访问列表
+def summary_visit_list():
+    # 创建或获取命名互斥体
+    mutex = None
+    try:
+        mutex = win32event.CreateMutex(None, False, 'Global\\VisitListJsonFileSyncMutex')
+        # 等待获取互斥体
+        wait_result = win32event.WaitForSingleObject(mutex, 5000)
+
+        if wait_result != win32event.WAIT_OBJECT_0:
+            logger.error('failed to wait the global mutex')
+            return False
+
+        # 加载文件
+        visit_datas = []
+        file_path = os.path.join(g_data_path, 'visit.txt')
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r') as f:
+                    visit_datas = json.load(f)
+            except json.JSONDecodeError:
+                logger.error('failed to load the visit data')
+                return False
+
+        # 保存统计信息到桌面文件上
+        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+        file_name = '访问统计_' + datetime.now().strftime('%Y%m%d_%H%M%S') + '.txt'
+        file_path = os.path.join(desktop_path, file_name)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(f'总共访客数：{len(visit_datas)}\n')
+            for visit in visit_datas:
+                f.write(f'{visit["ip"]}在{visit["time"]}访问过\n')
+            print(f'访问统计保存在桌面文件：{file_name}')
+
+        return True
+    except Exception as e:
+        logger.error(f'failed to summary visit list, error: {e}')
+        return False
+    finally:
+        # 确保释放互斥体
+        if mutex:
+            try:
+                win32event.ReleaseMutex(mutex)
+                win32api.CloseHandle(mutex)
+            except Exception as e:
+                logger.error(f'failed to release the the global mutex, error: {e}')
+
+
 def collect_data(request):
     try:
         request_body = json.loads(request.body)
