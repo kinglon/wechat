@@ -75,6 +75,8 @@ public:
     void stop();
 
     const QVector<WeChat>& getWeChats() { return m_wechats; }
+    void exitAccount(QString wechatId);
+    void moveAccount(bool up, QString wechatId);
 
     QString getCurrentWeChatId() { return m_currentWeChatId; }
 

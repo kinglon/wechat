@@ -24,6 +24,8 @@ public: // QML调用接口
     Q_INVOKABLE void quitApp();
 
     Q_INVOKABLE bool addAccount();
+    Q_INVOKABLE void exitAccount(QString wechatId) { m_wechatController.exitAccount(wechatId); }
+    Q_INVOKABLE void moveAccount(bool up, QString wechatId) { m_wechatController.moveAccount(up, wechatId); }
 
     Q_INVOKABLE void mergeWeChat(bool merge);
 
@@ -33,6 +35,9 @@ public: // QML调用接口
 
     // 主窗口已创建
     Q_INVOKABLE void mainWndReady();
+
+    // 获取主屏区域
+    Q_INVOKABLE QVariant getPrimaryScreenRect();
 
 signals:
     // 显示窗口

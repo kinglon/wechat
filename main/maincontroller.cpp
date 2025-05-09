@@ -7,6 +7,8 @@
 #include <QTimer>
 #include <QCoreApplication>
 #include <QQuickWindow>
+#include <QGuiApplication>
+#include <QScreen>
 #include "settingmanager.h"
 #include "../Utility/DumpUtil.h"
 
@@ -85,6 +87,12 @@ void MainController::mainWndReady()
 
     m_wechatController.setMainWindowHandle((HWND)targetWindow->winId());
     run();
+}
+
+QVariant MainController::getPrimaryScreenRect()
+{
+    QRect primaryScreenGeometry = QGuiApplication::primaryScreen()->availableGeometry();
+    return QVariant::fromValue(primaryScreenGeometry);
 }
 
 void MainController::onWeChatListChange()

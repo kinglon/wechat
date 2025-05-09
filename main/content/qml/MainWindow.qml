@@ -26,6 +26,9 @@ WindowBase {
     storeBtnImage: "qrc:/content/res/icon_restore.png"
     closeBtnImage: "qrc:/content/res/icon_close.png"
 
+    // 微信头像右击弹出菜单
+    property var wechatMenu: null
+
     Item {
         parent: contentArea
         anchors.fill: parent
@@ -66,51 +69,74 @@ WindowBase {
                     id: wechatModel
                 }
 
-                delegate: ButtonBase {
+                delegate: Item {
                     width: wechatList.width
                     height: 80
-                    text: nickName
-                    textNormalColor: current?"#00FF80":"#2E2E2E"
-                    font.pixelSize: 13
-                    icon.source: avatarImg
-                    icon.width: 44
-                    icon.height: 44
-                    display: AbstractButton.TextUnderIcon
-                    spacing: 4
-                    bgNormalColor: "transparent"
-                    bgClickColor: bgNormalColor
-                    bgHoverColor: bgNormalColor
 
-                    // 新消息小红点
-                    Rectangle {
-                        z: 1
-                        width: 8
-                        height: width
-                        anchors.right: parent.right
-                        anchors.rightMargin: 19
-                        anchors.top: parent.top
-                        anchors.topMargin: 8
-                        radius: width/2
-                        color: "red"
-                        visible: hasNewMsg
-                    }
-
-                    onClicked: {
-                        cppMainController.setCurrentWeChat(wechatId)
-                        for (var j=0; j<wechatModel.count; j++)
-                        {
-                            if (wechatModel.get(j)["wechatId"] === wechatId)
-                            {
-                                wechatModel.setProperty(j, "current", true);
-                            }
-                            else
-                            {
-                                wechatModel.setProperty(j, "current", false);
+                    // 右键菜单
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.RightButton
+                        onReleased: {
+                            if (mouse.button === Qt.RightButton) {                                
+                                if (wechatMenu == null) {
+                                    wechatMenu = wechatListMenuComponent.createObject(null)
+                                }
+                                wechatMenu.wechatId = wechatId
+                                var globalPos = mapToGlobal(mouseX, mouseY)
+                                wechatMenu.x = globalPos.x
+                                wechatMenu.y = globalPos.y
+                                wechatMenu.visible = true;
+                                wechatMenu.requestActivate();
                             }
                         }
                     }
 
-                    onTextNormalColorChanged: { updateButtonStatus(); }
+                    ButtonBase {
+                        anchors.fill: parent
+                        text: nickName
+                        textNormalColor: current?"#00FF80":"#2E2E2E"
+                        font.pixelSize: 13
+                        icon.source: avatarImg
+                        icon.width: 44
+                        icon.height: 44
+                        display: AbstractButton.TextUnderIcon
+                        spacing: 4
+                        bgNormalColor: "transparent"
+                        bgClickColor: bgNormalColor
+                        bgHoverColor: bgNormalColor
+
+                        onClicked: {
+                            cppMainController.setCurrentWeChat(wechatId)
+                            for (var j=0; j<wechatModel.count; j++)
+                            {
+                                if (wechatModel.get(j)["wechatId"] === wechatId)
+                                {
+                                    wechatModel.setProperty(j, "current", true);
+                                }
+                                else
+                                {
+                                    wechatModel.setProperty(j, "current", false);
+                                }
+                            }
+                        }
+
+                        onTextNormalColorChanged: { updateButtonStatus(); }
+                    }
+
+                    // 新消息小红点
+                    Rectangle {
+                        z: 1
+                        width: 12
+                        height: width
+                        anchors.right: parent.right
+                        anchors.rightMargin: 23-width/2
+                        anchors.top: parent.top
+                        anchors.topMargin: 12-height/2
+                        radius: width/2
+                        color: "red"
+                        visible: hasNewMsg
+                    }
                 }
             }
 
@@ -258,6 +284,11 @@ WindowBase {
         cppMainController.showMessage.connect(function(message) {})
         cppMainController.wechatListChange.connect(onWeChatListChange)
         cppMainController.wechatStatusChange.connect(onWechatStatusChange)
+
+        // 居中显示在主屏幕上
+        var primaryScreenRect = cppMainController.getPrimaryScreenRect()
+        mainWindow.x = primaryScreenRect.x + (primaryScreenRect.width - mainWindow.width) / 2
+        mainWindow.y = primaryScreenRect.y + (primaryScreenRect.height - mainWindow.height) / 2
     }
 
     function onWeChatListChange(wechatJson) {
@@ -291,5 +322,10 @@ WindowBase {
     Component {
         id: wechatCoverWindowComponent
         WechatCoverWindow {}
+    }
+
+    Component {
+        id: wechatListMenuComponent
+        WechatListMenu {}
     }
 }

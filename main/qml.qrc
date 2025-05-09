@@ -10,5 +10,6 @@
         <file>content/res/icon_min.png</file>
         <file>content/res/icon_restore.png</file>
         <file>content/qml/WechatCoverWindow.qml</file>
+        <file>content/qml/WechatListMenu.qml</file>
     </qresource>
 </RCC>

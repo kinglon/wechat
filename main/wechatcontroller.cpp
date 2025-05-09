@@ -118,12 +118,96 @@ void WeChatController::stop()
     WeChatUtil::unInitializeUIA();
 }
 
+void WeChatController::exitAccount(QString wechatId)
+{
+    for (const auto& item : m_wechats)
+    {
+        if (item.m_id == wechatId)
+        {
+            DWORD dwProcessId = 0;
+            GetWindowThreadProcessId(item.m_mainWnd, &dwProcessId);
+            if (dwProcessId == 0)
+            {
+                qCritical("failed to call GetWindowThreadProcessId, error: %d", GetLastError());
+                break;
+            }
+
+            HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, dwProcessId);
+            if (hProcess == NULL)
+            {
+                qCritical("failed to call OpenProcess, pid:%d, error: %d", dwProcessId, GetLastError());
+                break;
+            }
+
+            TerminateProcess(hProcess, 0);
+            CloseHandle(hProcess);
+
+            break;
+        }
+    }
+}
+
+void WeChatController::moveAccount(bool up, QString wechatId)
+{
+    bool change = false;
+    for (int i=0; i<m_wechats.size(); i++)
+    {
+        if (m_wechats[i].m_id == wechatId)
+        {
+            auto item = m_wechats[i];
+            if (up && i > 0)
+            {
+                m_wechats[i] = m_wechats[i-1];
+                m_wechats[i-1] = item;
+                change = true;
+            }
+            else if (!up && i < m_wechats.size()-1)
+            {
+                m_wechats[i] = m_wechats[i+1];
+                m_wechats[i+1] = item;
+                change = true;
+            }
+
+            break;
+        }
+    }
+
+    if (change)
+    {
+        emit wechatListChange();
+    }
+}
+
 void WeChatController::onMainTimer()
 {
     if (!m_isRunning)
     {
         return;
     }
+
+    // 检测微信是否已经退出
+    for (auto it=m_wechats.begin(); it!=m_wechats.end(); it++)
+    {
+        if (!::IsWindow(it->m_mainWnd))
+        {
+            bool current = it->m_id == m_currentWeChatId;
+            m_wechats.erase(it);
+            if (current)
+            {
+                if (m_wechats.size() > 0)
+                {
+                    m_currentWeChatId = m_wechats[0].m_id;
+                }
+                else
+                {
+                    m_currentWeChatId = "";
+                }
+            }
+            emit wechatListChange();
+            return;
+        }
+    }
+
 
     // 实时更新每个微信窗口的位置
     for (const auto& item : m_wechats)
