@@ -75,6 +75,7 @@ IUIAutomationElement* WeChatUtil::getNavigationToolbar()
     varName.bstrVal = SysAllocString(L"导航");
     IUIAutomationCondition* pNameCondition = nullptr;
     m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, varName, &pNameCondition);
+    VariantClear(&varName);
 
     // 组合条件
     IUIAutomationCondition* pCombinedCondition = nullptr;
@@ -270,38 +271,53 @@ IUIAutomationElement* WeChatUtil::getChatBtn()
     return button;
 }
 
-IUIAutomationElement* WeChatUtil::getMessageEdit(QString name)
+IUIAutomationElement* WeChatUtil::getMessageEdit()
 {
-    if (m_uiAutomation == nullptr)
+    // 先找发送按钮
+    IUIAutomationElement* sendButton = getSendBtn();
+    if (sendButton == nullptr)
     {
         return nullptr;
     }
 
-    IUIAutomationElement* pRoot = nullptr;
-    m_uiAutomation->ElementFromHandle(m_hWnd, &pRoot);
-    if (!pRoot)
+    IUIAutomationTreeWalker* walker = nullptr;
+    HRESULT hr = m_uiAutomation->get_RawViewWalker(&walker);
+    if (FAILED(hr))
     {
-        qDebug("failed to get the root element");
+        qCritical("failed to get walker, error: 0x%x", hr);
+        sendButton->Release();
         return nullptr;
     }
 
-    std::wstring nameString = name.toStdWString();
-    IUIAutomationCondition* pNameCondition = NULL;
-    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, CComVariant(nameString.c_str()), &pNameCondition);
+    // 3次父元素
+    IUIAutomationElement* pCurrent = sendButton;
+    for (int i = 0; i < 3; ++i)
+    {
+        IUIAutomationElement* pParent = nullptr;
+        walker->GetParentElement(pCurrent, &pParent);
+        pCurrent->Release(); // 释放当前元素
+        pCurrent = pParent;
 
+        if (!pCurrent) break; // 没有更多父元素
+    }
+    // sendButton不需要释放，查询父元素的时候已经释放了
+    walker->Release();
+
+    if (pCurrent == nullptr)
+    {
+        qCritical("failed to get parent");
+        return nullptr;
+    }
+
+    // 查找编辑框控件
     IUIAutomationCondition* pControlTypeCondition = NULL;
     m_uiAutomation->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(UIA_EditControlTypeId), &pControlTypeCondition);
 
-    IUIAutomationCondition* pCombinedCondition = NULL;
-    m_uiAutomation->CreateAndCondition(pNameCondition, pControlTypeCondition, &pCombinedCondition);
-
     IUIAutomationElement* edit = nullptr;
-    pRoot->FindFirst(TreeScope_Children, pCombinedCondition, &edit);
+    pCurrent->FindFirst(TreeScope_Descendants, pControlTypeCondition, &edit);
 
-    pNameCondition->Release();
     pControlTypeCondition->Release();
-    pCombinedCondition->Release();
-    pRoot->Release();
+    pCurrent->Release();
 
     return edit;
 }
@@ -317,12 +333,16 @@ IUIAutomationElement* WeChatUtil::getSendBtn()
     m_uiAutomation->ElementFromHandle(m_hWnd, &pRoot);
     if (!pRoot)
     {
-        qDebug("failed to get the root element");
+        qCritical("failed to get the root element");
         return nullptr;
     }
 
+    VARIANT varName;
+    varName.vt = VT_BSTR;
+    varName.bstrVal = SysAllocString(L"发送(S)");
     IUIAutomationCondition* pNameCondition = NULL;
-    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, CComVariant(L"发送(S)"), &pNameCondition);
+    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, varName, &pNameCondition);
+    VariantClear(&varName);
 
     IUIAutomationCondition* pControlTypeCondition = NULL;
     m_uiAutomation->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(UIA_ButtonControlTypeId), &pControlTypeCondition);
@@ -331,7 +351,7 @@ IUIAutomationElement* WeChatUtil::getSendBtn()
     m_uiAutomation->CreateAndCondition(pNameCondition, pControlTypeCondition, &pCombinedCondition);
 
     IUIAutomationElement* button = nullptr;
-    pRoot->FindFirst(TreeScope_Children, pCombinedCondition, &button);
+    pRoot->FindFirst(TreeScope_Descendants, pCombinedCondition, &button);
 
     pNameCondition->Release();
     pControlTypeCondition->Release();
@@ -339,4 +359,61 @@ IUIAutomationElement* WeChatUtil::getSendBtn()
     pRoot->Release();
 
     return button;
+}
+
+bool WeChatUtil::clickButton(IUIAutomationElement* button)
+{
+    IUIAutomationInvokePattern* invokePattern = nullptr;
+    HRESULT hr = button->GetCurrentPattern(UIA_InvokePatternId, (IUnknown**)&invokePattern);
+    if (FAILED(hr))
+    {
+        qCritical("failed to get IUIAutomationInvokePattern interface, error: 0x%x", hr);
+        return false;
+    }
+
+    if (invokePattern == nullptr)
+    {
+        qCritical("IUIAutomationInvokePattern is nullptr");
+        return false;
+    }
+
+    hr = invokePattern->Invoke();
+    invokePattern->Release();
+    if (FAILED(hr))
+    {
+        qCritical("failed to click button, error: 0x%x", hr);
+        return false;
+    }
+
+    return true;
+}
+
+bool WeChatUtil::inputText(IUIAutomationElement* editControl, const QString& text)
+{
+    IUIAutomationValuePattern* valuePattern = nullptr;
+    HRESULT hr = editControl->GetCurrentPattern(UIA_ValuePatternId, (IUnknown**)&valuePattern);
+    if (FAILED(hr))
+    {
+        qCritical("failed to get IUIAutomationValuePattern interface, error: 0x%x", hr);
+        return false;
+    }
+
+    if (valuePattern == nullptr)
+    {
+        qCritical("IUIAutomationValuePattern is nullptr");
+        return false;
+    }
+
+    std::wstring textString = text.toStdWString();
+    BSTR bstrText = SysAllocString(textString.c_str());
+    hr = valuePattern->SetValue(bstrText);
+    SysFreeString(bstrText);
+    valuePattern->Release();
+    if (FAILED(hr))
+    {
+        qCritical("failed to set text, error: 0x%x", hr);
+        return false;
+    }
+
+    return true;
 }

@@ -24,10 +24,16 @@ public:
     IUIAutomationElement* getChatBtn();
 
     // 获取消息输入编辑框
-    IUIAutomationElement* getMessageEdit(QString name);
+    IUIAutomationElement* getMessageEdit();
 
     // 获取发送按钮
     IUIAutomationElement* getSendBtn();
+
+    // 点击按钮
+    static bool clickButton(IUIAutomationElement* button);
+
+    // 输入文本
+    static bool inputText(IUIAutomationElement* editControl, const QString& text);
 
 private:
     // 获取导航工具栏对象

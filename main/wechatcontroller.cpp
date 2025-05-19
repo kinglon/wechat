@@ -446,7 +446,7 @@ void WeChatController::sendMessage(const QString& message)
 
     if (currentWeChat->m_messageEdit == nullptr)
     {
-        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit(currentWeChat->m_nickName);
+        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit();
     }
 
     if (currentWeChat->m_sendBtn == nullptr || currentWeChat->m_messageEdit == nullptr)
@@ -455,56 +455,39 @@ void WeChatController::sendMessage(const QString& message)
         return;
     }
 
-    // 将发送内容复制到粘贴板
-    QGuiApplication::clipboard()->setText(message);
-
-    // 激活消息输入框
-    HRESULT hr = currentWeChat->m_messageEdit->SetFocus();
-    if (FAILED(hr))
+    // 消息输入框设置消息内容
+    if (!WeChatUtil::inputText(currentWeChat->m_messageEdit, message))
     {
-        qCritical("failed to set focus, error: 0x%x", hr);
-
         // 重新获取再尝试一次
         currentWeChat->m_messageEdit->Release();
-        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit(currentWeChat->m_nickName);
+        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit();
         if (currentWeChat->m_messageEdit == nullptr)
         {
             qCritical("failed to find the message edit");
             return;
         }
 
-        hr = currentWeChat->m_messageEdit->SetFocus();
-        if (FAILED(hr))
+        if (!WeChatUtil::inputText(currentWeChat->m_messageEdit, message))
         {
-            qCritical("failed to set focus, error: 0x%x", hr);
             return;
         }
     }
 
-    // 按Ctrl+V将发送内容粘贴到消息输入框
-    INPUT inputs[4] = {};
-    ZeroMemory(inputs, sizeof(inputs));
-    // 按下Ctrl
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = VK_CONTROL;
-    // 按下V
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = 'V';
-    // 释放V
-    inputs[2].type = INPUT_KEYBOARD;
-    inputs[2].ki.wVk = 'V';
-    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-    // 释放Ctrl
-    inputs[3].type = INPUT_KEYBOARD;
-    inputs[3].ki.wVk = VK_CONTROL;
-    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-
-    UINT sent = SendInput(4, inputs, sizeof(INPUT));
-    if (sent != 4)
-    {
-        qCritical("failed to send all keyboard inputs, only send %d inputs, error: %d", send, GetLastError()));
-        return;
-    }
-
     // 点击发送按钮
+    if (!WeChatUtil::clickButton(currentWeChat->m_sendBtn))
+    {
+        // 重新获取再尝试一次
+        currentWeChat->m_sendBtn->Release();
+        currentWeChat->m_sendBtn = wechatUtil.getSendBtn();
+        if (currentWeChat->m_sendBtn == nullptr)
+        {
+            qCritical("failed to find the send button");
+            return;
+        }
+
+        if (!WeChatUtil::clickButton(currentWeChat->m_sendBtn))
+        {
+            return;
+        }
+    }
 }
