@@ -1,6 +1,8 @@
 ﻿#include "wechatcontroller.h"
 #include <QTimer>
 #include <QUuid>
+#include <QGuiApplication>
+#include <QClipboard>
 #include "wechat/openwechat.h"
 #include "wechat/wechatutil.h"
 
@@ -191,6 +193,7 @@ void WeChatController::onMainTimer()
         if (!::IsWindow(it->m_mainWnd))
         {
             bool current = it->m_id == m_currentWeChatId;
+            it->release();
             m_wechats.erase(it);
             if (current)
             {
@@ -303,6 +306,19 @@ void WeChatController::showWeChatWindow(HWND hWnd, bool visible)
     }
 }
 
+WeChat* WeChatController::getCurrentWeChat()
+{
+    for (auto& item : m_wechats)
+    {
+        if (item.m_id == m_currentWeChatId)
+        {
+            return &item;
+        }
+    }
+
+    return nullptr;
+}
+
 void WeChatController::onHasNewWeChat(WeChat* wechat)
 {
     bool found = false;
@@ -393,11 +409,7 @@ void WeChatController::mergeWeChat(bool merge)
         // 清空微信列表
         for (auto& item : m_wechats)
         {
-            if (item.m_chatBtn)
-            {
-                item.m_chatBtn->Release();
-                item.m_chatBtn = nullptr;
-            }
+            item.release();
         }
         m_wechats.clear();
         m_currentWeChatId = "";
@@ -408,4 +420,91 @@ void WeChatController::mergeWeChat(bool merge)
 bool WeChatController::startWeChat()
 {
     return ::startWeChat();
+}
+
+void WeChatController::sendMessage(const QString& message)
+{
+    if (message.isEmpty())
+    {
+        qCritical("message is empty");
+        return;
+    }
+
+    WeChat* currentWeChat = getCurrentWeChat();
+    if (currentWeChat == nullptr)
+    {
+        qInfo("current wechat is null");
+        return;
+    }
+
+    // 获取发送按钮和消息输入框
+    WeChatUtil wechatUtil(currentWeChat->m_mainWnd);
+    if (currentWeChat->m_sendBtn == nullptr)
+    {
+        currentWeChat->m_sendBtn = wechatUtil.getSendBtn();
+    }
+
+    if (currentWeChat->m_messageEdit == nullptr)
+    {
+        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit(currentWeChat->m_nickName);
+    }
+
+    if (currentWeChat->m_sendBtn == nullptr || currentWeChat->m_messageEdit == nullptr)
+    {
+        qCritical("failed to find the send button or message edit");
+        return;
+    }
+
+    // 将发送内容复制到粘贴板
+    QGuiApplication::clipboard()->setText(message);
+
+    // 激活消息输入框
+    HRESULT hr = currentWeChat->m_messageEdit->SetFocus();
+    if (FAILED(hr))
+    {
+        qCritical("failed to set focus, error: 0x%x", hr);
+
+        // 重新获取再尝试一次
+        currentWeChat->m_messageEdit->Release();
+        currentWeChat->m_messageEdit = wechatUtil.getMessageEdit(currentWeChat->m_nickName);
+        if (currentWeChat->m_messageEdit == nullptr)
+        {
+            qCritical("failed to find the message edit");
+            return;
+        }
+
+        hr = currentWeChat->m_messageEdit->SetFocus();
+        if (FAILED(hr))
+        {
+            qCritical("failed to set focus, error: 0x%x", hr);
+            return;
+        }
+    }
+
+    // 按Ctrl+V将发送内容粘贴到消息输入框
+    INPUT inputs[4] = {};
+    ZeroMemory(inputs, sizeof(inputs));
+    // 按下Ctrl
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_CONTROL;
+    // 按下V
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = 'V';
+    // 释放V
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wVk = 'V';
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+    // 释放Ctrl
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wVk = VK_CONTROL;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    UINT sent = SendInput(4, inputs, sizeof(INPUT));
+    if (sent != 4)
+    {
+        qCritical("failed to send all keyboard inputs, only send %d inputs, error: %d", send, GetLastError()));
+        return;
+    }
+
+    // 点击发送按钮
 }

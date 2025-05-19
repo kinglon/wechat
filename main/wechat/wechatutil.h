@@ -23,6 +23,12 @@ public:
     // 获取聊天按钮
     IUIAutomationElement* getChatBtn();
 
+    // 获取消息输入编辑框
+    IUIAutomationElement* getMessageEdit(QString name);
+
+    // 获取发送按钮
+    IUIAutomationElement* getSendBtn();
+
 private:
     // 获取导航工具栏对象
     IUIAutomationElement* getNavigationToolbar();

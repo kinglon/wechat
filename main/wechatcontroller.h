@@ -29,6 +29,35 @@ public:
 
     // 聊天按钮
     IUIAutomationElement* m_chatBtn = nullptr;
+
+    // 消息发送按钮
+    IUIAutomationElement* m_sendBtn = nullptr;
+
+    // 消息输入框
+    IUIAutomationElement* m_messageEdit = nullptr;
+
+public:
+    // 销毁显示释放资源
+    void release()
+    {
+        if (m_chatBtn)
+        {
+            m_chatBtn->Release();
+            m_chatBtn = nullptr;
+        }
+
+        if (m_sendBtn)
+        {
+            m_sendBtn->Release();
+            m_sendBtn = nullptr;
+        }
+
+        if (m_messageEdit)
+        {
+            m_messageEdit->Release();
+            m_messageEdit = nullptr;
+        }
+    }
 };
 
 class WeChatThread: public QThread
@@ -92,6 +121,8 @@ public:
 
     bool startWeChat();
 
+    void sendMessage(const QString& message);
+
 signals:
     void wechatListChange();
 
@@ -104,6 +135,8 @@ private slots:
 
 private:
     void showWeChatWindow(HWND hWnd, bool visible);
+
+    WeChat* getCurrentWeChat();
 
 private:
     bool m_isRunning = false;

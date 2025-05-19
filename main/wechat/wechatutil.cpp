@@ -269,3 +269,74 @@ IUIAutomationElement* WeChatUtil::getChatBtn()
 
     return button;
 }
+
+IUIAutomationElement* WeChatUtil::getMessageEdit(QString name)
+{
+    if (m_uiAutomation == nullptr)
+    {
+        return nullptr;
+    }
+
+    IUIAutomationElement* pRoot = nullptr;
+    m_uiAutomation->ElementFromHandle(m_hWnd, &pRoot);
+    if (!pRoot)
+    {
+        qDebug("failed to get the root element");
+        return nullptr;
+    }
+
+    std::wstring nameString = name.toStdWString();
+    IUIAutomationCondition* pNameCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, CComVariant(nameString.c_str()), &pNameCondition);
+
+    IUIAutomationCondition* pControlTypeCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(UIA_EditControlTypeId), &pControlTypeCondition);
+
+    IUIAutomationCondition* pCombinedCondition = NULL;
+    m_uiAutomation->CreateAndCondition(pNameCondition, pControlTypeCondition, &pCombinedCondition);
+
+    IUIAutomationElement* edit = nullptr;
+    pRoot->FindFirst(TreeScope_Children, pCombinedCondition, &edit);
+
+    pNameCondition->Release();
+    pControlTypeCondition->Release();
+    pCombinedCondition->Release();
+    pRoot->Release();
+
+    return edit;
+}
+
+IUIAutomationElement* WeChatUtil::getSendBtn()
+{
+    if (m_uiAutomation == nullptr)
+    {
+        return nullptr;
+    }
+
+    IUIAutomationElement* pRoot = nullptr;
+    m_uiAutomation->ElementFromHandle(m_hWnd, &pRoot);
+    if (!pRoot)
+    {
+        qDebug("failed to get the root element");
+        return nullptr;
+    }
+
+    IUIAutomationCondition* pNameCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_NamePropertyId, CComVariant(L"发送(S)"), &pNameCondition);
+
+    IUIAutomationCondition* pControlTypeCondition = NULL;
+    m_uiAutomation->CreatePropertyCondition(UIA_ControlTypePropertyId, CComVariant(UIA_ButtonControlTypeId), &pControlTypeCondition);
+
+    IUIAutomationCondition* pCombinedCondition = NULL;
+    m_uiAutomation->CreateAndCondition(pNameCondition, pControlTypeCondition, &pCombinedCondition);
+
+    IUIAutomationElement* button = nullptr;
+    pRoot->FindFirst(TreeScope_Children, pCombinedCondition, &button);
+
+    pNameCondition->Release();
+    pControlTypeCondition->Release();
+    pCombinedCondition->Release();
+    pRoot->Release();
+
+    return button;
+}

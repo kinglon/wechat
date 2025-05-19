@@ -11,5 +11,6 @@
         <file>content/res/icon_restore.png</file>
         <file>content/qml/WechatCoverWindow.qml</file>
         <file>content/qml/WechatListMenu.qml</file>
+        <file>content/qml/HuaShuControl.qml</file>
     </qresource>
 </RCC>

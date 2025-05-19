@@ -8,9 +8,9 @@ WindowBase {
     objectName: "MainWindow"
     id: mainWindow
     flags: Qt.Window|Qt.FramelessWindowHint|Qt.WindowMaximizeButtonHint|Qt.WindowMinimizeButtonHint
-    width: 930
+    width: 1180
     height: 650
-    minimumWidth: 820
+    minimumWidth: 1080
     minimumHeight: 620
     title: "多开神器"
     color: "transparent"
@@ -182,17 +182,17 @@ WindowBase {
         // 横线
         Rectangle {
            id: horizonLine
-           width: parent.width - leftPannel.width - verticalLine.width
+           width: parent.width - leftPannel.width - verticalLine.width - verticalLine2.width - huaShu.width
            height: 1
            anchors.top: parent.top
-           anchors.right: parent.right
+           anchors.left: verticalLine.right
            color: "#E5E5E5"
         }
 
         // 微信区域
         Item {
             id: wechatPannel
-            width: parent.width-leftPannel.width-verticalLine.width
+            width: horizonLine.width
             height: parent.height-horizonLine.height
             anchors.left: verticalLine.right
             anchors.top: horizonLine.bottom
@@ -230,6 +230,29 @@ WindowBase {
             onWidthChanged: updateWeChatRect()
             onHeightChanged: updateWeChatRect()
             Component.onCompleted: updateWeChatRect()
+        }
+
+        // 竖线
+        Item {
+           id: verticalLine2
+           width: 11
+           height: parent.height
+           anchors.right: huaShu.left
+
+           Rectangle {
+               width: 1
+               height: parent.height
+               anchors.left: parent.left
+               color: "#E5E5E5"
+           }
+        }
+
+        // 话术
+        HuaShuControl {
+            id: huaShu
+            width: 275
+            height: parent.height
+            anchors.right: parent.right
         }
 
         // 启动页面，盖在上面

@@ -39,6 +39,9 @@ public: // QML调用接口
     // 获取主屏区域
     Q_INVOKABLE QVariant getPrimaryScreenRect();
 
+    // 发送消息
+    Q_INVOKABLE void sendMessage(QString message) { m_wechatController.sendMessage(message); }
+
 signals:
     // 显示窗口
     void showWindow(QString name);

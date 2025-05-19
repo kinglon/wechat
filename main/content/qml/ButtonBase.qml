@@ -15,12 +15,14 @@ Button {
 
     // 各状态下的背景颜色
     property color bgNormalColor: "transparent"
-    property color bgClickColor: "#24F5F5F7"
     property color bgHoverColor: "#24F5F5F7"
+    property color bgClickColor: bgHoverColor
     property color bgDisableColor: "transparent"
 
     // 各状态下的字体颜色
     property color textNormalColor: "#F5F5F7"
+    property color textHoverColor: textNormalColor
+    property color textClickColor: textHoverColor
     property color textDisableColor: "#26F5F5F7"
 
     // 自定义属性
@@ -60,15 +62,17 @@ Button {
             palette.buttonText = textDisableColor
             solidBackground.color = bgDisableColor
             solidBackground.border.width = disableBorderWidth
-        } else {
-            palette.buttonText = textNormalColor
+        } else {            
             if (isSelected || down) {
+                palette.buttonText = textClickColor
                 solidBackground.color = bgClickColor
                 solidBackground.border.width = borderWidth
             } else if (hovered) {
+                palette.buttonText = textHoverColor
                 solidBackground.color = bgHoverColor
                 solidBackground.border.width = borderWidth
             } else {
+                palette.buttonText = textNormalColor
                 solidBackground.color = bgNormalColor
                 solidBackground.border.width = normalBorderWidth
             }
