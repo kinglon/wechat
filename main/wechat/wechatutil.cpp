@@ -2,6 +2,10 @@
 #include <comdef.h>
 #include <atlbase.h>
 #include <atlcom.h>
+#include <QGuiApplication>
+#include <QClipboard>
+#include <QThread>
+#include <QCursor>
 
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -363,25 +367,33 @@ IUIAutomationElement* WeChatUtil::getSendBtn()
 
 bool WeChatUtil::clickButton(IUIAutomationElement* button)
 {
-    IUIAutomationInvokePattern* invokePattern = nullptr;
-    HRESULT hr = button->GetCurrentPattern(UIA_InvokePatternId, (IUnknown**)&invokePattern);
-    if (FAILED(hr))
-    {
-        qCritical("failed to get IUIAutomationInvokePattern interface, error: 0x%x", hr);
-        return false;
-    }
+    // 获取按钮位置
+    RECT rect;
+    button->get_CurrentBoundingRectangle(&rect);
 
-    if (invokePattern == nullptr)
-    {
-        qCritical("IUIAutomationInvokePattern is nullptr");
-        return false;
-    }
+    // 计算中心点
+    int x = rect.left + (rect.right - rect.left) / 2;
+    int y = rect.top + (rect.bottom - rect.top) / 2;
 
-    hr = invokePattern->Invoke();
-    invokePattern->Release();
-    if (FAILED(hr))
+    // 移动鼠标
+    QCursor::setPos(QPoint(x, y));
+
+    // 发送鼠标事件
+    INPUT inputs[2] = {};
+    ZeroMemory(inputs, sizeof(inputs));
+
+    // 左键按下
+    inputs[0].type = INPUT_MOUSE;
+    inputs[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+
+    // 左键释放
+    inputs[1].type = INPUT_MOUSE;
+    inputs[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
+
+    int sendCount = SendInput(2, inputs, sizeof(INPUT));
+    if (sendCount != 2)
     {
-        qCritical("failed to click button, error: 0x%x", hr);
+        qCritical("failed to send input, only send %d event, error: %d", sendCount, GetLastError());
         return false;
     }
 
@@ -390,28 +402,40 @@ bool WeChatUtil::clickButton(IUIAutomationElement* button)
 
 bool WeChatUtil::inputText(IUIAutomationElement* editControl, const QString& text)
 {
-    IUIAutomationValuePattern* valuePattern = nullptr;
-    HRESULT hr = editControl->GetCurrentPattern(UIA_ValuePatternId, (IUnknown**)&valuePattern);
+    // 激活消息输入框
+    HRESULT hr = editControl->SetFocus();
     if (FAILED(hr))
     {
-        qCritical("failed to get IUIAutomationValuePattern interface, error: 0x%x", hr);
+        qCritical("failed to set focus, error: 0x%x", hr);
         return false;
     }
+    QThread::msleep(100);
 
-    if (valuePattern == nullptr)
-    {
-        qCritical("IUIAutomationValuePattern is nullptr");
-        return false;
-    }
+    // 将文本内容复制到粘贴板
+    QGuiApplication::clipboard()->setText(text);
 
-    std::wstring textString = text.toStdWString();
-    BSTR bstrText = SysAllocString(textString.c_str());
-    hr = valuePattern->SetValue(bstrText);
-    SysFreeString(bstrText);
-    valuePattern->Release();
-    if (FAILED(hr))
+    // 按Ctrl+V将发送内容粘贴到消息输入框
+    INPUT inputs[4] = {};
+    ZeroMemory(inputs, sizeof(inputs));
+    // 按下Ctrl
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wVk = VK_CONTROL;
+    // 按下V
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wVk = 'V';
+    // 释放V
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wVk = 'V';
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+    // 释放Ctrl
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wVk = VK_CONTROL;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+
+    UINT sentCount = SendInput(4, inputs, sizeof(INPUT));
+    if (sentCount != 4)
     {
-        qCritical("failed to set text, error: 0x%x", hr);
+        qCritical("failed to send all keyboard inputs, only send %d inputs, error: %d", sentCount, GetLastError());
         return false;
     }
 

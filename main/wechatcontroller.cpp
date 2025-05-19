@@ -1,8 +1,7 @@
 ﻿#include "wechatcontroller.h"
 #include <QTimer>
 #include <QUuid>
-#include <QGuiApplication>
-#include <QClipboard>
+#include <QCursor>
 #include "wechat/openwechat.h"
 #include "wechat/wechatutil.h"
 
@@ -437,6 +436,12 @@ void WeChatController::sendMessage(const QString& message)
         return;
     }
 
+    // 获取当前光标位置
+    QPoint originalPos = QCursor::pos();
+
+    // 设置窗口激活
+    ::SetFocus(currentWeChat->m_mainWnd);
+
     // 获取发送按钮和消息输入框
     WeChatUtil wechatUtil(currentWeChat->m_mainWnd);
     if (currentWeChat->m_sendBtn == nullptr)
@@ -490,4 +495,7 @@ void WeChatController::sendMessage(const QString& message)
             return;
         }
     }
+
+    // 鼠标移回原处
+    QCursor::setPos(originalPos);
 }
