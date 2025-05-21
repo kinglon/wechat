@@ -12,5 +12,10 @@
         <file>content/qml/WechatCoverWindow.qml</file>
         <file>content/qml/WechatListMenu.qml</file>
         <file>content/qml/HuaShuControl.qml</file>
+        <file>content/qml/JianDuanHuaShuButton.qml</file>
+        <file>content/qml/HuaShuWindow.qml</file>
+        <file>content/res/icon_close2.png</file>
+        <file>content/qml/GroupWindow.qml</file>
+        <file>content/qml/HuaShuItemWindow.qml</file>
     </qresource>
 </RCC>

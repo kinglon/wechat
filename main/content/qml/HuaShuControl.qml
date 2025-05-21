@@ -1,7 +1,14 @@
 ﻿import QtQuick 2.0
 import QtQuick.Layouts 1.15
+import QtQml.Models 2.15
 
+// 主界面右侧话术面板
 Item {
+    id: huaShuRootPanel
+
+    // 所在的窗口
+    property var ownerWindow: null
+
     ColumnLayout {
         width: parent.width
         height: parent.height
@@ -68,17 +75,18 @@ Item {
                 id: categoryGridView
                 width: parent.width
                 height: rowCount*cellHeight
-                anchors.fill: parent
+                anchors.top: parent.top
                 cellWidth: width/columnCount
                 cellHeight: 34
                 clip: true
+                visible: count>0
 
                 // 行数列数
                 property int columnCount: 4
-                property int rowCount: count/columnCount+1
+                property int rowCount: count==0?0:(count-1)/columnCount+1
 
                 // 间距
-                property int spacing: 4
+                property int spacing: 6
 
                 delegate: Item {
                     ButtonBase {
@@ -86,15 +94,85 @@ Item {
                         height: categoryGridView.cellHeight-2*categoryGridView.spacing
                         x: categoryGridView.spacing
                         y: categoryGridView.spacing
-                        text: "常用"
-                        font.pixelSize: 14
+                        text: groupName
+                        font.pixelSize: 13
                         textNormalColor: "black"
                         textHoverColor: "white"
-                        borderRadius: 5
+                        borderRadius: 3
                         bgNormalColor: "#e9e9e9"
                         bgHoverColor: "#07c160"
+                        isSelected: current
                     }
                 }
+
+                model: ListModel {
+                    id: categoryListModel
+                }
+            }
+
+            // 话术
+            ListView {
+                id: huaShuListView
+                width: parent.width
+                height: huaShuPanel.height-categoryGridView.height
+                anchors.bottom: parent.bottom
+                spacing: 0
+                clip: true
+                visible: categoryGridView.visible
+
+                model: ListModel {
+                    id: huaShuListModel
+                }
+
+                delegate: Item {
+                    width: huaShuListView.width
+                    height: 37
+
+                    function getHuaShuContent() {
+                        return huaShuIndex+"  "+"<font color='#00FF80'>"+huaShuTitle+"</font>"+" "+huaShuContent
+                    }
+
+                    Text {
+                        anchors.fill: parent
+                        text: getHuaShuContent()
+                        color: "black"
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignLeft
+                        textFormat: Text.RichText // 启用富文本解析
+                    }
+
+                    // 分隔线
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        anchors.bottom: parent.bottom
+                        color: "#dddddd"
+                    }
+                }
+            }
+
+            function searchHuaShu(keyWord, groupName) {
+                categoryListModel.clear()
+                huaShuListModel.clear()
+
+                var huaShuJsonString = cppMainController.searchHuaShu(keyWord, groupName)
+                if (huaShuJsonString === "") {
+                    return
+                }
+
+                var huaShuJson = JSON.parse(huaShuJsonString)
+                for (var i=0; i<huaShuJson["group"].length; i++) {
+                    categoryListModel.append(huaShuJson["group"][i])
+                }
+                for (i=0; i<huaShuJson["huashu"].length; i++) {
+                    huaShuListModel.append(huaShuJson["huashu"][i])
+                }
+            }
+
+            Component.onCompleted: {
+                searchHuaShu("", "")
             }
         }
 
@@ -110,24 +188,67 @@ Item {
 
             // 第一行
             Row {
+                id: shortHuaShuRow1
                 width: parent.width-2*shortHuaShuPanel.padding
                 height: (parent.height-3*shortHuaShuPanel.padding)/2
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.topMargin: shortHuaShuPanel.padding
+                spacing: 5
 
-                ButtonBase {
+                JianDuanHuaShuButton {
                     width: 26
-                    height: parent.height
                     text: "亲"
-                    font.pixelSize: 12
-                    textNormalColor: "black"
-                    textHoverColor: "white"
-                    borderRadius: 5
-                    bgNormalColor: "white"
-                    bgHoverColor: "#08e371"
+                }
 
-                    onClicked: cppMainController.sendMessage(text)
+                JianDuanHuaShuButton {
+                    width: 40
+                    text: "您好"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 72
+                    text: "欢迎光临"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 40
+                    text: "在的"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 40
+                    text: "谢谢"
+                }
+            }
+
+            // 第二行
+            Row {
+                width: shortHuaShuRow1.width
+                height: shortHuaShuRow1.height
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: shortHuaShuPanel.padding
+                spacing: 5
+
+                JianDuanHuaShuButton {
+                    width: 56
+                    text: "请稍等"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 40
+                    text: "在吗"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 40
+                    text: "好的"
+                }
+
+                JianDuanHuaShuButton {
+                    width: 72
+                    text: "非常抱歉"
                 }
             }
         }
@@ -143,6 +264,15 @@ Item {
             bgNormalColor: "#e9e9e9"
             bgHoverColor: "#D1EDDE"
             bgClickColor: bgHoverColor
+
+            onClicked: {
+                huaShuWindowComponent.createObject(huaShuRootPanel.ownerWindow)
+            }
         }
+    }
+
+    Component {
+        id: huaShuWindowComponent
+        HuaShuWindow {}
     }
 }

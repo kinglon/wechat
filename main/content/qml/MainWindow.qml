@@ -253,6 +253,7 @@ WindowBase {
             width: 275
             height: parent.height
             anchors.right: parent.right
+            ownerWindow: mainWindow
         }
 
         // 启动页面，盖在上面

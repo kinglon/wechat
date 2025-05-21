@@ -13,6 +13,7 @@ SOURCES += \
         ../Utility/LogUtil.cpp \
         ../Utility/httpclientbase.cpp \
         datacollectcontroller.cpp \
+        huashumanager.cpp \
         main.cpp \
         maincontroller.cpp \
         memoryimageprovider.cpp \
@@ -49,6 +50,7 @@ HEADERS += \
     ../Utility/LogUtil.h \
     ../Utility/httpclientbase.h \
     datacollectcontroller.h \
+    huashumanager.h \
     maincontroller.h \
     memoryimageprovider.h \
     settingmanager.h \

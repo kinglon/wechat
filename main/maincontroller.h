@@ -6,6 +6,7 @@
 #include "wechatcontroller.h"
 #include <QQmlApplicationEngine>
 #include "datacollectcontroller.h"
+#include "huashumanager.h"
 
 class MainController : public QObject
 {
@@ -41,6 +42,15 @@ public: // QML调用接口
 
     // 发送消息
     Q_INVOKABLE void sendMessage(QString message) { m_wechatController.sendMessage(message); }
+
+    // 搜索话术，keyWord关键词，groupName分组名字，如果该分组没有话术就取第一个分组
+    Q_INVOKABLE QString searchHuaShu(QString keyWord, QString groupName) { return HuaShuManager::get()->searchHuaShu(keyWord, groupName); }
+
+    // 获取话术分组列表
+    Q_INVOKABLE QString getHuaShuGroupList() { return HuaShuManager::get()->getHuaShuGroupList(); }
+
+    // 获取指定分组下的话术列表
+    Q_INVOKABLE QString getHuaShuList(QString groupId) { return HuaShuManager::get()->getHuaShuList(groupId); }
 
 signals:
     // 显示窗口

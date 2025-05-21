@@ -177,7 +177,7 @@ Window {
                     anchors.right: parent.right
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    icon.source: "qrc:/content/res/icon_close.png"
+                    icon.source: windowBase.closeBtnImage
                     icon.width: width
                     icon.height: width
                     display: AbstractButton.IconOnly
