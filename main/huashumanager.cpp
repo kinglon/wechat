@@ -217,6 +217,7 @@ QString HuaShuManager::getHuaShuGroupList()
         QJsonObject groupJsonObject;
         groupJsonObject["groupId"] = item.m_huaShuGroupId;
         groupJsonObject["groupName"] = item.m_huaShuGroupName;
+        groupJsonObject["isMine"] = true;
         groupJsonObject["huaShuCount"] = item.m_huaShuList.length();
         myGroupJsonArray.append(groupJsonObject);
     }
@@ -228,6 +229,7 @@ QString HuaShuManager::getHuaShuGroupList()
         QJsonObject groupJsonObject;
         groupJsonObject["groupId"] = item.m_huaShuGroupId;
         groupJsonObject["groupName"] = item.m_huaShuGroupName;
+        groupJsonObject["isMine"] = false;
         groupJsonObject["huaShuCount"] = item.m_huaShuList.length();
         templateGroupJsonArray.append(groupJsonObject);
     }
@@ -242,6 +244,7 @@ QString HuaShuManager::getHuaShuGroupList()
 
 QString HuaShuManager::getHuaShuList(QString groupId)
 {
+    bool isMine = true;
     const HuaShuGroup* huaShuGroup = nullptr;
     for (const auto& item : m_myHuaShuList)
     {
@@ -257,6 +260,7 @@ QString HuaShuManager::getHuaShuList(QString groupId)
         if (item.m_huaShuGroupId == groupId)
         {
             huaShuGroup = &item;
+            isMine = false;
             break;
         }
     }
@@ -268,10 +272,12 @@ QString HuaShuManager::getHuaShuList(QString groupId)
         {
             const auto& item = huaShuGroup->m_huaShuList[i];
             QJsonObject huaShuJsonObject;
+            huaShuJsonObject["groupId"] = huaShuGroup->m_huaShuGroupId;
             huaShuJsonObject["huaShuId"] = item.m_huaShuId;
             huaShuJsonObject["huaShuIndex"] = QString("%1").arg(i+1, 2, 10, QChar('0'));
             huaShuJsonObject["huaShuTitle"] = item.m_huaShuTitle;
             huaShuJsonObject["huaShuContent"] = item.m_huaShuContent;
+            huaShuJsonObject["isMine"] = isMine;
             huaShuJsonArray.append(huaShuJsonObject);
         }
     }
@@ -281,4 +287,110 @@ QString HuaShuManager::getHuaShuList(QString groupId)
 
     QJsonDocument doc(root);
     return QString::fromUtf8(doc.toJson());
+}
+
+void HuaShuManager::addHuaShuGroup(QString groupName)
+{
+    if (groupName.isEmpty())
+    {
+        return;
+    }
+
+    HuaShuGroup huaShuGroup;
+    huaShuGroup.m_huaShuGroupId = QUuid::createUuid().toString().remove('{').remove('}');
+    huaShuGroup.m_huaShuGroupName = groupName;
+    m_myHuaShuList.append(huaShuGroup);
+
+    save();
+}
+
+void HuaShuManager::deleteHuaShuGroup(QString groupId)
+{
+    if (groupId.isEmpty())
+    {
+        return;
+    }
+
+    for (int i=0; i<m_myHuaShuList.size(); i++)
+    {
+        if (m_myHuaShuList[i].m_huaShuGroupId == groupId)
+        {
+            m_myHuaShuList.remove(i);
+            break;
+        }
+    }
+
+    save();
+}
+
+void HuaShuManager::addHuaShu(QString groupId, QString title, const QString& content)
+{
+    for (int i=0; i<m_myHuaShuList.size(); i++)
+    {
+        if (m_myHuaShuList[i].m_huaShuGroupId == groupId)
+        {
+            HuaShu huaShu;
+            huaShu.m_huaShuId = QUuid::createUuid().toString().remove('{').remove('}');
+            huaShu.m_huaShuGroupName = m_myHuaShuList[i].m_huaShuGroupName;
+            huaShu.m_huaShuTitle = title;
+            huaShu.m_huaShuContent = content;
+            m_myHuaShuList[i].m_huaShuList.append(huaShu);
+            break;
+        }
+    }
+
+    save();
+}
+
+void HuaShuManager::deleteHuaShu(QString groupId, QString huaShuId)
+{
+    for (int i=0; i<m_myHuaShuList.size(); i++)
+    {
+        if (m_myHuaShuList[i].m_huaShuGroupId == groupId)
+        {
+            for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
+            {
+                if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
+                {
+                    m_myHuaShuList[i].m_huaShuList.remove(j);
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    save();
+}
+
+void HuaShuManager::editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content)
+{
+    if (groupId == newGroupId)
+    {
+        // 分组没变，改下内容
+        for (int i=0; i<m_myHuaShuList.size(); i++)
+        {
+            if (m_myHuaShuList[i].m_huaShuGroupId == groupId)
+            {
+                for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
+                {
+                    if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
+                    {
+                        m_myHuaShuList[i].m_huaShuList[j].m_huaShuTitle = title;
+                        m_myHuaShuList[i].m_huaShuList[j].m_huaShuContent = content;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    else
+    {
+        // 分组变了，先删除，再添加
+        deleteHuaShu(groupId, huaShuId);
+        addHuaShu(newGroupId, title, content);
+    }
+
+    save();
 }

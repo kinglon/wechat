@@ -55,6 +55,21 @@ public:
     // 获取指定分组下的话术列表
     QString getHuaShuList(QString groupId);
 
+    // 新增话术分组
+    void addHuaShuGroup(QString groupName);
+
+    // 删除话术分组
+    void deleteHuaShuGroup(QString groupId);
+
+    // 新增话术
+    void addHuaShu(QString groupId, QString title, const QString& content);
+
+    // 删除话术
+    void deleteHuaShu(QString groupId, QString huaShuId);
+
+    // 修改话术
+    void editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content);
+
 private:
     void loadMyHuaShu();
     void loadTemplateHuaShu();

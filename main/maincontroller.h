@@ -52,6 +52,21 @@ public: // QML调用接口
     // 获取指定分组下的话术列表
     Q_INVOKABLE QString getHuaShuList(QString groupId) { return HuaShuManager::get()->getHuaShuList(groupId); }
 
+    // 新增话术分组
+    Q_INVOKABLE void addHuaShuGroup(QString groupName) { HuaShuManager::get()->addHuaShuGroup(groupName); }
+
+    // 删除话术分组
+    Q_INVOKABLE void deleteHuaShuGroup(QString groupId) { HuaShuManager::get()->deleteHuaShuGroup(groupId); }
+
+    // 新增话术
+    Q_INVOKABLE void addHuaShu(QString groupId, QString title, const QString& content) { HuaShuManager::get()->addHuaShu(groupId, title, content); }
+
+    // 删除话术
+    Q_INVOKABLE void deleteHuaShu(QString groupId, QString huaShuId) { HuaShuManager::get()->deleteHuaShu(groupId, huaShuId); }
+
+    // 修改话术
+    Q_INVOKABLE void editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content) { HuaShuManager::get()->editHuaShu(groupId, huaShuId, newGroupId, title, content); }
+
 signals:
     // 显示窗口
     void showWindow(QString name);

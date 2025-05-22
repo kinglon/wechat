@@ -92,7 +92,11 @@ WindowBase {
                             borderColor: textNormalColor
 
                             onClicked: {
-                                groupWindowComponent.createObject(huaShuWindow)
+                                var groupWindow = groupWindowComponent.createObject(huaShuWindow)
+                                groupWindow.save.connect(function(groupName) {
+                                    cppMainController.addHuaShuGroup(groupName)
+                                    leftPanel.loadGroupData()
+                                })
                             }
                         }
                     }
@@ -104,6 +108,9 @@ WindowBase {
                         height: count*leftPanel.rowHeight
                         spacing: 0
                         clip: true
+
+                        // 右键菜单
+                        property var menu: null
 
                         model: ListModel {
                             id: myHuaShuListModel
@@ -118,8 +125,20 @@ WindowBase {
                                 id: myHuaShuItemMouseArea
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                acceptedButtons: Qt.LeftButton|Qt.RightButton
 
-                                onClicked: leftPanel.selectGroup(groupId)
+                                onClicked: leftPanel.currentGroupId=groupId
+
+                                onReleased: {
+                                    if (mouse.button === Qt.RightButton) {
+                                        myHuaShuListView.menu.userData = groupId
+                                        var globalPos = mapToGlobal(mouseX, mouseY)
+                                        myHuaShuListView.menu.x = globalPos.x
+                                        myHuaShuListView.menu.y = globalPos.y
+                                        myHuaShuListView.menu.visible = true;
+                                        myHuaShuListView.menu.requestActivate();
+                                    }
+                                }
                             }
 
                             Text {
@@ -132,6 +151,21 @@ WindowBase {
                                 horizontalAlignment: Text.AlignLeft
                                 leftPadding: 35
                             }
+                        }
+
+                        Component.onCompleted: {
+                            menu = menuBaseComponent.createObject(null)
+                            menu.menuListModel.append({"menuId": "delete", "menuText": "删除"})
+                            menu.menuClick.connect(function(menuId) {
+                                if (menuId === "delete") {
+                                    var currentGroupId = menu.userData
+                                    cppMainController.deleteHuaShuGroup(currentGroupId)
+                                    leftPanel.loadGroupData()
+                                    if (currentGroupId === leftPanel.currentGroupId) {
+                                        leftPanel.currentGroupId = ""
+                                    }
+                                }
+                            })
                         }
                     }
 
@@ -175,7 +209,7 @@ WindowBase {
                                 anchors.fill: parent
                                 hoverEnabled: true
 
-                                onClicked: leftPanel.selectGroup(groupId)
+                                onClicked: leftPanel.currentGroupId=groupId
                             }
 
                             Text {
@@ -191,11 +225,14 @@ WindowBase {
                         }
                     }
 
-                    function selectGroup(groupId) {
-                        currentGroupId = groupId
+                    onCurrentGroupIdChanged: {
+                        huaShuListModel.clear()
+                        if (currentGroupId === "") {
+                            return
+                        }
+
                         var huaShuJsonString = cppMainController.getHuaShuList(currentGroupId)
                         var huaShuJson = JSON.parse(huaShuJsonString)
-                        huaShuListModel.clear()
                         for (var i=0; i<huaShuJson["huaShuList"].length; i++) {
                             huaShuListModel.append(huaShuJson["huaShuList"][i])
                         }
@@ -359,5 +396,15 @@ WindowBase {
     Component {
         id: huaShuItemWindowComponent
         HuaShuItemWindow {}
+    }
+
+    Component {
+        id: messageBoxComponent
+        MessageBox {}
+    }
+
+    Component {
+        id: menuBaseComponent
+        MenuBase {}
     }
 }

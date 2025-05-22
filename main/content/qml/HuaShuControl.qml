@@ -29,6 +29,7 @@ Item {
                 height: parent.height-8
                 anchors.centerIn: parent
                 font.pixelSize: 13
+                verticalAlignment: Text.AlignVCenter
 
                 // 实际文本内容
                 property string realText: ""
