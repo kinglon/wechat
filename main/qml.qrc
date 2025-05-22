@@ -18,5 +18,8 @@
         <file>content/qml/GroupWindow.qml</file>
         <file>content/qml/HuaShuItemWindow.qml</file>
         <file>content/qml/MenuBase.qml</file>
+        <file>content/qml/GroupComboBox.qml</file>
+        <file>content/res/combo_arrow.png</file>
+        <file>content/qml/HuaShuToast.qml</file>
     </qresource>
 </RCC>

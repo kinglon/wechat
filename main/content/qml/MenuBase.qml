@@ -17,7 +17,7 @@ Window {
     property alias menuListModel: menuListModelId
 
     // user data
-    property string userData: ""
+    property var userData: null
 
     signal menuClick(string menuId)
 

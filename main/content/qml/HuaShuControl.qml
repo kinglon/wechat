@@ -51,6 +51,7 @@ Item {
                 onTextChanged: {
                     if (activeFocus || text !== placeholderText) {
                         realText = text
+                        huaShuPanel.searchHuaShu()
                     }
                 }
 
@@ -70,6 +71,9 @@ Item {
             id: huaShuPanel
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            // 当前分类
+            property string currentGroupId: ""
 
             // 分类
             GridView {
@@ -103,6 +107,11 @@ Item {
                         bgNormalColor: "#e9e9e9"
                         bgHoverColor: "#07c160"
                         isSelected: current
+
+                        onClicked: {
+                            huaShuPanel.currentGroupId = groupId
+                            huaShuPanel.searchHuaShu()
+                        }
                     }
                 }
 
@@ -121,16 +130,55 @@ Item {
                 clip: true
                 visible: categoryGridView.visible
 
+                // 当前悬停的话术ID
+                property string hoverHuaShuId: ""
+
+                // 吐司窗口及显示位置
+                property var toastWindow: null
+                property int toastWindowY: 0
+
+                Component {
+                    id: toastWindowComponent
+                    HuaShuToast {}
+                }
+
+                onHoverHuaShuIdChanged: {
+                    if (hoverHuaShuId === "") {
+                        if (toastWindow) {
+                            toastWindow.close()
+                        }
+                    } else {
+                        if (toastWindow == null) {
+                            toastWindow = toastWindowComponent.createObject(null)
+                        }
+
+                        for (var i=0; i<huaShuListModel.count; i++) {
+                            if (huaShuListModel.get(i)["huaShuId"] === hoverHuaShuId) {
+                                toastWindow.huaShuTitle = huaShuListModel.get(i)["huaShuTitle"]
+                                toastWindow.huaShuContent = huaShuListModel.get(i)["huaShuContent"]
+                                break
+                            }
+                        }
+
+                        var huaShuListViewGlobalPos = huaShuListView.mapToGlobal(0, 0)
+                        toastWindow.x = huaShuListViewGlobalPos.x-toastWindow.width
+                        toastWindow.y = huaShuListView.toastWindowY
+                        toastWindow.visible = true;
+                        toastWindow.requestActivate();
+                    }
+                }
+
                 model: ListModel {
                     id: huaShuListModel
                 }
 
                 delegate: Item {
+                    id: delegateItem
                     width: huaShuListView.width
                     height: 37
 
                     function getHuaShuContent() {
-                        return huaShuIndex+"  "+"<font color='#00FF80'>"+huaShuTitle+"</font>"+" "+huaShuContent
+                        return huaShuIndex+"  "+"<font color='#0ec365'>"+huaShuTitle+"</font>"+" "+huaShuContent
                     }
 
                     Text {
@@ -151,14 +199,34 @@ Item {
                         anchors.bottom: parent.bottom
                         color: "#dddddd"
                     }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+
+                        onDoubleClicked: {
+                            cppMainController.sendMessage(huaShuContent)
+                        }
+
+                        onEntered: {
+                            var mouseGlobalPos = delegateItem.mapToGlobal(mouseX, mouseY)
+                            huaShuListView.toastWindowY = mouseGlobalPos.y
+                            huaShuListView.hoverHuaShuId = huaShuId
+                        }
+
+                        onExited: {
+                            huaShuListView.hoverHuaShuId = ""
+                        }
+                    }
                 }
             }
 
-            function searchHuaShu(keyWord, groupName) {
+            function searchHuaShu() {
                 categoryListModel.clear()
                 huaShuListModel.clear()
 
-                var huaShuJsonString = cppMainController.searchHuaShu(keyWord, groupName)
+                var keyWord = searchEdit.realText
+                var huaShuJsonString = cppMainController.searchHuaShu(keyWord, currentGroupId)
                 if (huaShuJsonString === "") {
                     return
                 }
@@ -169,11 +237,14 @@ Item {
                 }
                 for (i=0; i<huaShuJson["huashu"].length; i++) {
                     huaShuListModel.append(huaShuJson["huashu"][i])
+                    if (huaShuJson["huashu"][i]["current"]) {
+                        huaShuPanel.currentGroupId = huaShuJson["huashu"][i]["groupId"]
+                    }
                 }
             }
 
             Component.onCompleted: {
-                searchHuaShu("", "")
+                searchHuaShu()
             }
         }
 
@@ -267,7 +338,10 @@ Item {
             bgClickColor: bgHoverColor
 
             onClicked: {
-                huaShuWindowComponent.createObject(huaShuRootPanel.ownerWindow)
+                var window = huaShuWindowComponent.createObject(huaShuRootPanel.ownerWindow)
+                window.closing.connect(function(close) {
+                    huaShuPanel.searchHuaShu()
+                })
             }
         }
     }

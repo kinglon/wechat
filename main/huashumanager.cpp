@@ -132,7 +132,7 @@ bool HuaShuManager::save()
     return true;
 }
 
-QString HuaShuManager::searchHuaShu(QString keyWord, QString groupName)
+QString HuaShuManager::searchHuaShu(QString keyWord, QString groupId)
 {
     // 按关键词搜索
     QVector<HuaShuGroup> results;
@@ -170,7 +170,7 @@ QString HuaShuManager::searchHuaShu(QString keyWord, QString groupName)
     int currentGroupIndex = 0;
     for (int i=0; i<results.length(); i++)
     {
-        if (results[i].m_huaShuGroupName == groupName)
+        if (results[i].m_huaShuGroupId == groupId)
         {
             currentGroupIndex = i;
             break;
@@ -183,6 +183,7 @@ QString HuaShuManager::searchHuaShu(QString keyWord, QString groupName)
     {
         const auto& item = results[i];
         QJsonObject groupJsonObject;
+        groupJsonObject["groupId"] = item.m_huaShuGroupId;
         groupJsonObject["groupName"] = item.m_huaShuGroupName;
         groupJsonObject["current"] = i==currentGroupIndex;
         groupJsonArray.append(groupJsonObject);
@@ -342,20 +343,23 @@ void HuaShuManager::addHuaShu(QString groupId, QString title, const QString& con
     save();
 }
 
-void HuaShuManager::deleteHuaShu(QString groupId, QString huaShuId)
+void HuaShuManager::deleteHuaShu(QString huaShuId)
 {
     for (int i=0; i<m_myHuaShuList.size(); i++)
     {
-        if (m_myHuaShuList[i].m_huaShuGroupId == groupId)
+        bool found = false;
+        for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
         {
-            for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
+            if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
             {
-                if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
-                {
-                    m_myHuaShuList[i].m_huaShuList.remove(j);
-                    break;
-                }
+                m_myHuaShuList[i].m_huaShuList.remove(j);
+                found = true;
+                break;
             }
+        }
+
+        if (found)
+        {
             break;
         }
     }
@@ -388,8 +392,60 @@ void HuaShuManager::editHuaShu(QString groupId, QString huaShuId, QString newGro
     else
     {
         // 分组变了，先删除，再添加
-        deleteHuaShu(groupId, huaShuId);
+        deleteHuaShu(huaShuId);
         addHuaShu(newGroupId, title, content);
+    }
+
+    save();
+}
+
+
+void HuaShuManager::moveHuaShu(QString huaShuId, bool up, bool top)
+{
+    for (int i=0; i<m_myHuaShuList.size(); i++)
+    {
+        bool found = false;
+        for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
+        {
+            if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
+            {
+                found = true;
+                HuaShu currentHuaShu = m_myHuaShuList[i].m_huaShuList[j];
+                if (up)
+                {
+                    if (top)
+                    {
+                        m_myHuaShuList[i].m_huaShuList.remove(j);
+                        m_myHuaShuList[i].m_huaShuList.insert(0, currentHuaShu);
+                    }
+                    else
+                    {
+                        if (j != 0)
+                        {
+                            m_myHuaShuList[i].m_huaShuList.remove(j);
+                            m_myHuaShuList[i].m_huaShuList.insert(j-1, currentHuaShu);
+                        }
+                    }
+                }
+                else
+                {
+                    if (j != m_myHuaShuList[i].m_huaShuList.size()-1)
+                    {
+                        m_myHuaShuList[i].m_huaShuList.remove(j);
+                        m_myHuaShuList[i].m_huaShuList.insert(j+1, currentHuaShu);
+                    }
+                }
+
+                m_myHuaShuList[i].m_huaShuList.remove(j);
+
+                break;
+            }
+        }
+
+        if (found)
+        {
+            break;
+        }
     }
 
     save();

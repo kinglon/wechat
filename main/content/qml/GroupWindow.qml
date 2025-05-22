@@ -40,6 +40,8 @@ WindowBase {
             width: parent.width
             height: 37
             color: "white"
+            border.width: 1
+            border.color: "#e7e7e7"
 
             // 输入窗口
             TextEdit {

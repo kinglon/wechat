@@ -44,7 +44,7 @@ public: // QML调用接口
     Q_INVOKABLE void sendMessage(QString message) { m_wechatController.sendMessage(message); }
 
     // 搜索话术，keyWord关键词，groupName分组名字，如果该分组没有话术就取第一个分组
-    Q_INVOKABLE QString searchHuaShu(QString keyWord, QString groupName) { return HuaShuManager::get()->searchHuaShu(keyWord, groupName); }
+    Q_INVOKABLE QString searchHuaShu(QString keyWord, QString groupId) { return HuaShuManager::get()->searchHuaShu(keyWord, groupId); }
 
     // 获取话术分组列表
     Q_INVOKABLE QString getHuaShuGroupList() { return HuaShuManager::get()->getHuaShuGroupList(); }
@@ -62,10 +62,13 @@ public: // QML调用接口
     Q_INVOKABLE void addHuaShu(QString groupId, QString title, const QString& content) { HuaShuManager::get()->addHuaShu(groupId, title, content); }
 
     // 删除话术
-    Q_INVOKABLE void deleteHuaShu(QString groupId, QString huaShuId) { HuaShuManager::get()->deleteHuaShu(groupId, huaShuId); }
+    Q_INVOKABLE void deleteHuaShu(QString huaShuId) { HuaShuManager::get()->deleteHuaShu(huaShuId); }
 
     // 修改话术
     Q_INVOKABLE void editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content) { HuaShuManager::get()->editHuaShu(groupId, huaShuId, newGroupId, title, content); }
+
+    // 移动话术
+    Q_INVOKABLE void moveHuaShu(QString huaShuId, bool up, bool top) { HuaShuManager::get()->moveHuaShu(huaShuId, up, top); }
 
 signals:
     // 显示窗口
