@@ -27,6 +27,16 @@ QImage MemoryImageProvider::requestImage(const QString &id, QSize *size, const Q
         }
         retImage = &qrCode;
     }
+    else if (id == "advertise")
+    {
+        static QImage advertise;
+        if (advertise.isNull())
+        {
+            QString advertiseFilePath = QString::fromStdWString(CImPath::GetConfPath()) + "advertise.jpg";
+            advertise.load(advertiseFilePath);
+        }
+        retImage = &advertise;
+    }
 
     if (retImage)
     {

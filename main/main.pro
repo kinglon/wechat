@@ -14,6 +14,7 @@ SOURCES += \
         ../Utility/httpclientbase.cpp \
         datacollectcontroller.cpp \
         huashumanager.cpp \
+        licensecontroller.cpp \
         main.cpp \
         maincontroller.cpp \
         memoryimageprovider.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
     ../Utility/httpclientbase.h \
     datacollectcontroller.h \
     huashumanager.h \
+    licensecontroller.h \
     maincontroller.h \
     memoryimageprovider.h \
     settingmanager.h \

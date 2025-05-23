@@ -23,6 +23,9 @@ void MainController::run()
     connect(&m_wechatController, &WeChatController::wechatListChange, this, &MainController::onWeChatListChange);
     connect(&m_wechatController, &WeChatController::wechatStatusChange, this, &MainController::onWeChatStatusChange);
     m_wechatController.run();
+
+    connect(&m_licenseController, &LicenseController::licenseEnd, this, &MainController::licenseEnd);
+    m_licenseController.run();
 }
 
 void MainController::quitApp()

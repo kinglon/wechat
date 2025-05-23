@@ -21,5 +21,6 @@
         <file>content/qml/GroupComboBox.qml</file>
         <file>content/res/combo_arrow.png</file>
         <file>content/qml/HuaShuToast.qml</file>
+        <file>content/qml/CustomerServiceWindow.qml</file>
     </qresource>
 </RCC>

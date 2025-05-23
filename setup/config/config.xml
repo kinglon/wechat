@@ -12,4 +12,5 @@
     <WizardShowPageList>false</WizardShowPageList>
     <MaintenanceToolName>uninstall</MaintenanceToolName>
     <MaintenanceToolIniFile>uninstall.ini</MaintenanceToolIniFile>
+	<RunProgram>@TargetDir@/main.exe</RunProgram>
 </Installer>

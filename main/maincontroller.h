@@ -7,6 +7,7 @@
 #include <QQmlApplicationEngine>
 #include "datacollectcontroller.h"
 #include "huashumanager.h"
+#include "licensecontroller.h"
 
 class MainController : public QObject
 {
@@ -83,6 +84,9 @@ signals:
     // 微信状态改变
     void wechatStatusChange(QString wechatJson);
 
+    // 授权到期
+    void licenseEnd();
+
 private slots:
     void onWeChatListChange();
 
@@ -97,6 +101,8 @@ private:
     WeChatController m_wechatController;
 
     DataCollectController m_dataCollectController;
+
+    LicenseController m_licenseController;
 };
 
 #endif // MAINCONTROLLER_H
