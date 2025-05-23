@@ -145,6 +145,7 @@ QString HuaShuManager::searchHuaShu(QString keyWord, QString groupId)
         for (const auto& item : m_myHuaShuList)
         {
             HuaShuGroup huaShuGroup;
+            huaShuGroup.m_huaShuGroupId = item.m_huaShuGroupId;
             huaShuGroup.m_huaShuGroupName = item.m_huaShuGroupName;
             for (const auto& content : item.m_huaShuList)
             {
@@ -367,8 +368,35 @@ void HuaShuManager::deleteHuaShu(QString huaShuId)
     save();
 }
 
-void HuaShuManager::editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content)
+void HuaShuManager::editHuaShu(QString huaShuId, QString newGroupId, QString title, const QString& content)
 {
+    // 先查询下原来的分组ID
+    QString groupId;
+    for (int i=0; i<m_myHuaShuList.size(); i++)
+    {
+        bool found = false;
+        for (int j=0; j<m_myHuaShuList[i].m_huaShuList.size(); j++)
+        {
+            if (m_myHuaShuList[i].m_huaShuList[j].m_huaShuId == huaShuId)
+            {
+                groupId = m_myHuaShuList[i].m_huaShuGroupId;
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            break;
+        }
+    }
+
+    if (groupId.isEmpty())
+    {
+        qCritical("failed to find the group id");
+        return;
+    }
+
     if (groupId == newGroupId)
     {
         // 分组没变，改下内容
@@ -435,8 +463,6 @@ void HuaShuManager::moveHuaShu(QString huaShuId, bool up, bool top)
                         m_myHuaShuList[i].m_huaShuList.insert(j+1, currentHuaShu);
                     }
                 }
-
-                m_myHuaShuList[i].m_huaShuList.remove(j);
 
                 break;
             }

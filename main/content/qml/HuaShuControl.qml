@@ -143,29 +143,28 @@ Item {
                 }
 
                 onHoverHuaShuIdChanged: {
-                    if (hoverHuaShuId === "") {
-                        if (toastWindow) {
-                            toastWindow.close()
-                        }
-                    } else {
-                        if (toastWindow == null) {
-                            toastWindow = toastWindowComponent.createObject(null)
-                        }
-
-                        for (var i=0; i<huaShuListModel.count; i++) {
-                            if (huaShuListModel.get(i)["huaShuId"] === hoverHuaShuId) {
-                                toastWindow.huaShuTitle = huaShuListModel.get(i)["huaShuTitle"]
-                                toastWindow.huaShuContent = huaShuListModel.get(i)["huaShuContent"]
-                                break
-                            }
-                        }
-
-                        var huaShuListViewGlobalPos = huaShuListView.mapToGlobal(0, 0)
-                        toastWindow.x = huaShuListViewGlobalPos.x-toastWindow.width
-                        toastWindow.y = huaShuListView.toastWindowY
-                        toastWindow.visible = true;
-                        toastWindow.requestActivate();
+                    if (toastWindow) {
+                        toastWindow.close()
+                        toastWindow = null
                     }
+
+                    if (hoverHuaShuId === "") {
+                        return
+                    }
+
+                    toastWindow = toastWindowComponent.createObject(null)
+                    for (var i=0; i<huaShuListModel.count; i++) {
+                        if (huaShuListModel.get(i)["huaShuId"] === hoverHuaShuId) {
+                            toastWindow.huaShuTitle = huaShuListModel.get(i)["huaShuTitle"]
+                            toastWindow.huaShuContent = huaShuListModel.get(i)["huaShuContent"]
+                            break
+                        }
+                    }
+
+                    var huaShuListViewGlobalPos = huaShuListView.mapToGlobal(0, 0)
+                    toastWindow.x = huaShuListViewGlobalPos.x-toastWindow.width
+                    toastWindow.y = huaShuListView.toastWindowY
+                    toastWindow.show()
                 }
 
                 model: ListModel {

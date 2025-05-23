@@ -316,6 +316,7 @@ WindowBase {
                             var huaShuItemWindow = huaShuItemWindowComponent.createObject(huaShuWindow)
                             huaShuItemWindow.save.connect(function() {
                                 cppMainController.addHuaShu(huaShuItemWindow.huaShuGroupId, huaShuItemWindow.huaShuTitle, huaShuItemWindow.huaShuContent)
+                                leftPanel.loadGroupData()
                                 if (huaShuItemWindow.huaShuGroupId === leftPanel.currentGroupId) {
                                     leftPanel.loadHuaShuData()
                                 }
@@ -344,6 +345,61 @@ WindowBase {
 
                     // 右键菜单
                     property var menu: null
+
+                    // 右键菜单处理
+                    function onMenuItemClicked(menuId) {
+                        var huaShuId = huaShuListView.menu.userData
+                        var huaShuItem = null
+                        for (var i=0; i<huaShuListModel.count; i++) {
+                            if (huaShuListModel.get(i)["huaShuId"] === huaShuId) {
+                                huaShuItem = huaShuListModel.get(i)
+                                break
+                            }
+                        }
+
+                        if (huaShuItem == null) {
+                            return
+                        }
+
+                        if (menuId === "delete") {
+                            cppMainController.deleteHuaShu(huaShuId)
+                            leftPanel.loadGroupData()
+                            leftPanel.loadHuaShuData()
+                        } else if (menuId === "edit") {
+                            var params = {
+                                "huaShuId": huaShuItem["huaShuId"],
+                                "huaShuTitle": huaShuItem["huaShuTitle"],
+                                "huaShuContent": huaShuItem["huaShuContent"],
+                                "huaShuGroupId": huaShuItem["groupId"],
+                            }
+                            var window = huaShuItemWindowComponent.createObject(null, params)
+                            window.save.connect(function() {
+                                cppMainController.editHuaShu(window.huaShuId, window.huaShuGroupId, window.huaShuTitle, window.huaShuContent)
+                                leftPanel.loadGroupData()
+                                leftPanel.loadHuaShuData()
+                            })
+                        } else if (menuId === "editTo") {
+                            params = {
+                                "huaShuTitle": huaShuItem["huaShuTitle"],
+                                "huaShuContent": huaShuItem["huaShuContent"],
+                                "huaShuGroupId": huaShuItem["groupId"],
+                            }
+                            window = huaShuItemWindowComponent.createObject(null, params)
+                            window.save.connect(function() {
+                                cppMainController.addHuaShu(window.huaShuGroupId, window.huaShuTitle, window.huaShuContent)
+                                leftPanel.loadGroupData()
+                            })
+                        } else if (menuId === "moveTop") {
+                            cppMainController.moveHuaShu(huaShuId, true, true)
+                            leftPanel.loadHuaShuData()
+                        } else if (menuId === "moveUp") {
+                            cppMainController.moveHuaShu(huaShuId, true, false)
+                            leftPanel.loadHuaShuData()
+                        } else if (menuId === "moveDown") {
+                            cppMainController.moveHuaShu(huaShuId, false, false)
+                            leftPanel.loadHuaShuData()
+                        }
+                    }
 
                     model: ListModel {
                         id: huaShuListModel
@@ -400,6 +456,14 @@ WindowBase {
 
                             onReleased: {
                                 if (mouse.button === Qt.RightButton) {
+                                    if (huaShuListView.menu) {
+                                        huaShuListView.menu.close()
+                                        huaShuListView.menu = null
+                                    }
+
+                                    huaShuListView.menu = menuBaseComponent.createObject(null)
+                                    huaShuListView.menu.menuClick.connect(huaShuListView.onMenuItemClicked)
+
                                     huaShuListView.menu.menuListModel.clear()
                                     if (isMine) {
                                         huaShuListView.menu.menuListModel.append({"menuId": "moveTop", "menuText": "移至顶部"})
@@ -415,66 +479,10 @@ WindowBase {
                                     var globalPos = mapToGlobal(mouseX, mouseY)
                                     huaShuListView.menu.x = globalPos.x
                                     huaShuListView.menu.y = globalPos.y
-                                    huaShuListView.menu.visible = true;
-                                    huaShuListView.menu.requestActivate();
+                                    huaShuListView.menu.show()
                                 }
                             }
                         }
-                    }
-
-                    Component.onCompleted: {
-                        huaShuListView.menu = menuBaseComponent.createObject(null)
-                        huaShuListView.menu.menuClick.connect(function(menuId) {
-                            var huaShuId = menu.userData
-                            var huaShuItem = null
-                            for (var i=0; i<huaShuListModel.count; i++) {
-                                if (huaShuListModel.get(i)["huaShuId"] === huaShuId) {
-                                    huaShuItem = huaShuListModel[i]
-                                    break
-                                }
-                            }
-
-                            if (huaShuItem == null) {
-                                return
-                            }
-
-                            if (menuId === "delete") {
-                                cppMainController.deleteHuaShu(huaShuId)
-                                leftPanel.loadHuaShuData()
-                            } else if (menuId === "edit") {
-                                var params = {
-                                    "huaShuId": huaShuItem["huaShuId"],
-                                    "huaShuTitle": huaShuItem["huaShuTitle"],
-                                    "huaShuContent": huaShuItem["huaShuContent"],
-                                    "huaShuGroupId": huaShuItem["groupId"],
-                                }
-                                var window = huaShuItemWindowComponent.createObject(null, params)
-                                window.save.connect(function() {
-                                    cppMainController.editHuaShu(window.huaShuGroupId, window.huaShuId, window.huaShuTitle, window.huaShuContent)
-                                    leftPanel.loadHuaShuData()
-                                })
-                            } else if (menuId === "editTo") {
-                                params = {
-                                    "huaShuTitle": huaShuItem["huaShuTitle"],
-                                    "huaShuContent": huaShuItem["huaShuContent"],
-                                    "huaShuGroupId": huaShuItem["groupId"],
-                                }
-                                window = huaShuItemWindowComponent.createObject(null, params)
-                                window.save.connect(function() {
-                                    cppMainController.addHuaShu(window.huaShuGroupId, window.huaShuTitle, window.huaShuContent)
-                                    leftPanel.loadHuaShuData()
-                                })
-                            } else if (menuId === "moveTop") {
-                                cppMainController.moveHuaShu(huaShuId, true, true)
-                                leftPanel.loadHuaShuData()
-                            } else if (menuId === "moveUp") {
-                                cppMainController.moveHuaShu(huaShuId, true, false)
-                                leftPanel.loadHuaShuData()
-                            } else if (menuId === "moveDown") {
-                                cppMainController.moveHuaShu(huaShuId, false, false)
-                                leftPanel.loadHuaShuData()
-                            }
-                        })
                     }
                 }
             }

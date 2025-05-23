@@ -8,11 +8,11 @@ WindowBase {
     id: huaShuItemWindow
     flags: Qt.Window|Qt.FramelessWindowHint
     width: 557
-    height: 380
+    height: 420
     minimumWidth: 557
-    minimumHeight: 380
+    minimumHeight: 420
     maximumWidth: 557
-    maximumHeight: 380
+    maximumHeight: 420
     title: "话术"
     color: "transparent"
     backgroundColor: "#F5F5F5"
@@ -45,15 +45,17 @@ WindowBase {
         parent: contentArea
         width: parent.width-40
         height: parent.height-40
-        anchors.centerIn: parent
+        anchors.centerIn: parent        
 
-        Column {
+        ColumnLayout {
+            anchors.fill: parent
             spacing: 10
+            clip: true
 
             // 话术内容文本框
             Text {
-                width: parent.width
-                height: 20
+                Layout.fillWidth: true
+                Layout.preferredHeight: 20
                 text: "话术内容"
                 color: "#969696"
                 font.pixelSize: 13
@@ -64,8 +66,8 @@ WindowBase {
 
             // 话术内容输入框
             Rectangle {
-                width: parent.width
-                height: 200
+                Layout.fillWidth: true
+                Layout.preferredHeight: 200
                 color: "white"
                 border.width: 1
                 border.color: "#e7e7e7"
@@ -91,8 +93,8 @@ WindowBase {
 
             // 话术标题和话术分组
             Row {
-                width: parent.width
-                height: 40
+                Layout.fillWidth: true
+                Layout.preferredHeight: 40
                 spacing: 10
 
                 // 话术标题文本框
@@ -109,7 +111,7 @@ WindowBase {
 
                 // 话术标题输入框
                 Rectangle {
-                    width: 140
+                    width: 185
                     height: parent.height
                     color: "white"
                     border.width: 1
@@ -148,7 +150,7 @@ WindowBase {
                 // 所属分组下拉框
                 GroupComboBox {
                     id: groupComboBox
-                    width: 140
+                    width: 185
                     height: parent.height
 
                     Component.onCompleted: {
@@ -161,13 +163,13 @@ WindowBase {
 
             // 保存按钮
             Item {
-                width: parent.width
-                height: 35
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
                 ButtonBase {
                     id: saveButton
                     width: 100
-                    height: parent.height
+                    height: 35
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     text: "保存"

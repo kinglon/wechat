@@ -65,7 +65,7 @@ public: // QML调用接口
     Q_INVOKABLE void deleteHuaShu(QString huaShuId) { HuaShuManager::get()->deleteHuaShu(huaShuId); }
 
     // 修改话术
-    Q_INVOKABLE void editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content) { HuaShuManager::get()->editHuaShu(groupId, huaShuId, newGroupId, title, content); }
+    Q_INVOKABLE void editHuaShu(QString huaShuId, QString groupId, QString title, const QString& content) { HuaShuManager::get()->editHuaShu(huaShuId, groupId, title, content); }
 
     // 移动话术
     Q_INVOKABLE void moveHuaShu(QString huaShuId, bool up, bool top) { HuaShuManager::get()->moveHuaShu(huaShuId, up, top); }

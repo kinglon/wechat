@@ -68,7 +68,7 @@ public:
     void deleteHuaShu(QString huaShuId);
 
     // 修改话术
-    void editHuaShu(QString groupId, QString huaShuId, QString newGroupId, QString title, const QString& content);
+    void editHuaShu(QString huaShuId, QString groupId, QString title, const QString& content);
 
     // 移动话术
     void moveHuaShu(QString huaShuId, bool up, bool top);

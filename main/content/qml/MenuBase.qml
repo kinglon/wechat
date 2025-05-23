@@ -21,6 +21,12 @@ Window {
 
     signal menuClick(string menuId)
 
+    // 显示
+    function show() {
+        visible = true
+        requestActivate();
+    }
+
     ListView {
         anchors.fill: parent
         spacing: 0
