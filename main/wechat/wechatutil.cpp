@@ -402,6 +402,9 @@ bool WeChatUtil::clickButton(IUIAutomationElement* button)
 
 bool WeChatUtil::inputText(IUIAutomationElement* editControl, const QString& text)
 {
+    // 将文本内容复制到粘贴板
+    QGuiApplication::clipboard()->setText(text);
+
     // 激活消息输入框
     HRESULT hr = editControl->SetFocus();
     if (FAILED(hr))
@@ -409,33 +412,97 @@ bool WeChatUtil::inputText(IUIAutomationElement* editControl, const QString& tex
         qCritical("failed to set focus, error: 0x%x", hr);
         return false;
     }
-    QThread::msleep(100);
+    QThread::msleep(300);
 
-    // 将文本内容复制到粘贴板
-    QGuiApplication::clipboard()->setText(text);
-
-    // 按Ctrl+V将发送内容粘贴到消息输入框
-    INPUT inputs[4] = {};
-    ZeroMemory(inputs, sizeof(inputs));
-    // 按下Ctrl
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = VK_CONTROL;
-    // 按下V
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = 'V';
-    // 释放V
-    inputs[2].type = INPUT_KEYBOARD;
-    inputs[2].ki.wVk = 'V';
-    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-    // 释放Ctrl
-    inputs[3].type = INPUT_KEYBOARD;
-    inputs[3].ki.wVk = VK_CONTROL;
-    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-
-    UINT sentCount = SendInput(4, inputs, sizeof(INPUT));
-    if (sentCount != 4)
+    bool ok = false;
+    for (int i=1; i<=3; i++)
     {
-        qCritical("failed to send all keyboard inputs, only send %d inputs, error: %d", sentCount, GetLastError());
+        // 按下Ctrl+A Delete Ctrl+V 全选删除粘贴
+        const int inputSize = 10;
+        INPUT inputs[inputSize] = {};
+        ZeroMemory(inputs, sizeof(inputs));
+
+        int pos = 0;
+        inputs[pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_CONTROL;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = 'A';
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = 'A';
+        inputs[pos].ki.dwFlags = KEYEVENTF_KEYUP;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_CONTROL;
+        inputs[pos].ki.dwFlags = KEYEVENTF_KEYUP;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_DELETE;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_DELETE;
+        inputs[pos].ki.dwFlags = KEYEVENTF_KEYUP;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_CONTROL;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = 'V';
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = 'V';
+        inputs[pos].ki.dwFlags = KEYEVENTF_KEYUP;
+
+        inputs[++pos].type = INPUT_KEYBOARD;
+        inputs[pos].ki.wVk = VK_CONTROL;
+        inputs[pos].ki.dwFlags = KEYEVENTF_KEYUP;
+
+        UINT sentCount = SendInput(inputSize, inputs, sizeof(INPUT));
+        if (sentCount != inputSize)
+        {
+            qCritical("failed to send all keyboard inputs, only send %d inputs, error: %d", sentCount, GetLastError());
+            return false;
+        }
+
+        // 检查是否有内容
+        QThread::msleep(100);
+        IUIAutomationValuePattern* pValuePattern = nullptr;
+        HRESULT hr = editControl->GetCurrentPattern(UIA_ValuePatternId, (IUnknown**)&pValuePattern);
+        if (SUCCEEDED(hr) && pValuePattern)
+        {
+            BSTR bstrValue;
+            hr = pValuePattern->get_CurrentValue(&bstrValue);
+            pValuePattern->Release();
+
+            if (SUCCEEDED(hr))
+            {
+                QString text = QString::fromWCharArray(bstrValue);
+                SysFreeString(bstrValue);
+                if (!text.isEmpty())
+                {
+                    ok = true;
+                    break;
+                }
+            }
+            else
+            {
+                qCritical("failed to get the value of wechat edit");
+                return false;
+            }
+        }
+        else
+        {
+            qCritical("wechat edit not support IUIAutomationValuePattern");
+            return false;
+        }
+
+        QThread::msleep(200);
+    }
+
+    if (!ok)
+    {
+        qCritical("failed to input text");
         return false;
     }
 
