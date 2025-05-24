@@ -203,7 +203,7 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
 
-                        onDoubleClicked: {
+                        onClicked: {
                             cppMainController.sendMessage(huaShuContent)
                         }
 

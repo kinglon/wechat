@@ -449,14 +449,9 @@ Window {
     }
 
     Component.onCompleted: {
-        // 居中显示窗口在屏幕上
-        windowBase.x = (Screen.desktopAvailableWidth-windowBase.width)/2
-        if (windowBase.x < 0) {
-            windowBase.x = 0
-        }
-        windowBase.y = (Screen.desktopAvailableHeight-windowBase.height)/2
-        if (windowBase.y < 0) {
-            windowBase.y = 0
-        }
+        // 居中显示在主屏幕上
+        var primaryScreenRect = cppMainController.getPrimaryScreenRect()
+        windowBase.x = primaryScreenRect.x + (primaryScreenRect.width - windowBase.width) / 2
+        windowBase.y = primaryScreenRect.y + (primaryScreenRect.height - windowBase.height) / 2
     }
 }

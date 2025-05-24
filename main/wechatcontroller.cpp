@@ -479,7 +479,7 @@ void WeChatController::sendMessage(const QString& message)
     }
 
     // 点击发送按钮
-    if (!WeChatUtil::clickButton(currentWeChat->m_sendBtn))
+    if (!WeChatUtil::clickElement(currentWeChat->m_sendBtn))
     {
         // 重新获取再尝试一次
         currentWeChat->m_sendBtn->Release();
@@ -490,7 +490,7 @@ void WeChatController::sendMessage(const QString& message)
             return;
         }
 
-        if (!WeChatUtil::clickButton(currentWeChat->m_sendBtn))
+        if (!WeChatUtil::clickElement(currentWeChat->m_sendBtn))
         {
             return;
         }

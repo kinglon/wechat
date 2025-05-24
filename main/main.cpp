@@ -69,7 +69,7 @@ bool isOpenGLSupported()
 int main(int argc, char *argv[])
 {
     // 单实例
-    const wchar_t* mutexName = L"{4ED33E4A-D83A-920A-8523-108D74420098}";
+    const wchar_t* mutexName = L"{4ED33E4A-773A-920A-8523-108D74420098}";
     HANDLE mutexHandle = CreateMutexW(nullptr, TRUE, mutexName);
     if (mutexHandle == nullptr || GetLastError() == ERROR_ALREADY_EXISTS)
     {

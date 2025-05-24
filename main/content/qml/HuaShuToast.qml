@@ -65,7 +65,7 @@ Window {
                 width: parent.width
                 height: 30
                 anchors.bottom: parent.bottom
-                text: "双击直接发送给当前好友"
+                text: "单击直接发送给当前好友"
                 color: "#0ec365"
                 font.pixelSize: 15
                 font.weight: Font.Medium

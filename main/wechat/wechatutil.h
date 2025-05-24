@@ -29,8 +29,8 @@ public:
     // 获取发送按钮
     IUIAutomationElement* getSendBtn();
 
-    // 点击按钮
-    static bool clickButton(IUIAutomationElement* button);
+    // 点击元素
+    static bool clickElement(IUIAutomationElement* element);
 
     // 输入文本
     static bool inputText(IUIAutomationElement* editControl, const QString& text);

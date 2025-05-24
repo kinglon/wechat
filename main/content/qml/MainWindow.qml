@@ -338,11 +338,6 @@ WindowBase {
         cppMainController.wechatStatusChange.connect(onWechatStatusChange)
         cppMainController.licenseEnd.connect(onLicenseEnd)
 
-        // 居中显示在主屏幕上
-        var primaryScreenRect = cppMainController.getPrimaryScreenRect()
-        mainWindow.x = primaryScreenRect.x + (primaryScreenRect.width - mainWindow.width) / 2
-        mainWindow.y = primaryScreenRect.y + (primaryScreenRect.height - mainWindow.height) / 2
-
         Qt.callLater(function() {
             cppMainController.mainWndReady()
             wechatPannel.updateWeChatRect()
