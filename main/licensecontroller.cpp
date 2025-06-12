@@ -16,7 +16,7 @@ void LicenseController::run()
 
 void LicenseController::onMainTimer()
 {
-    QDateTime targetDate(QDate(2025, 7, 1), QTime(0, 0, 0));
+    QDateTime targetDate(QDate(2025, 12, 1), QTime(0, 0, 0));
     QDateTime current = QDateTime::currentDateTime();
     if (current > targetDate)
     {

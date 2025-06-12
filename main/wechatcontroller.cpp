@@ -210,7 +210,6 @@ void WeChatController::onMainTimer()
         }
     }
 
-
     // 实时更新每个微信窗口的位置
     for (const auto& item : m_wechats)
     {
@@ -287,6 +286,24 @@ void WeChatController::onMainTimer()
     if (change)
     {
         emit wechatStatusChange();
+    }
+
+    // 检测微信窗口是否为激活窗口
+    HWND foregroundWindow = GetForegroundWindow();
+    bool isWeChatActive = false;
+    for (auto& item : m_wechats)
+    {
+        if (item.m_mainWnd == foregroundWindow)
+        {
+            isWeChatActive = true;
+            break;
+        }
+    }
+
+    if (isWeChatActive)
+    {
+        SetWindowPos(m_mainWnd, HWND_TOP, 0, 0, 0, 0,
+                                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 }
 
