@@ -150,6 +150,7 @@ Window {
                 // 最大化按钮
                 ButtonBase {
                     id: maxBtn
+					visible: windowBase.hasMaxButton
                     width: height+4
                     height: windowBase.btnImageWidth
                     anchors.right: closeBtn.left
